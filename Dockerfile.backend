@@ -1,4 +1,5 @@
-# Use official Python 3.11 slim image
+# BridgeGuardian AI — Backend Production Dockerfile
+# Uses Python 3.11-slim for compatibility with all ML dependencies (catboost, shap, etc.)
 FROM python:3.11-slim
 
 # Prevent python from writing pyc files and buffering stdout/stderr
@@ -8,35 +9,40 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /app
 
-# Install basic system dependencies
+# Install basic system dependencies (OpenCV needs libgl1/libglib2.0)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
+# Install python dependencies first (layer-cached unless requirements.txt changes)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy backend codebase and resources
+# Copy application source and runtime resources
 COPY ./backend ./backend
 COPY ./config ./config
 COPY ./models ./models
-COPY ./dataset ./dataset
+# ml_pipeline is needed only if the /train endpoint is used to retrain
+# Dataset (dataset/) is NOT copied — training-only, 36MB, excluded via .dockerignore
+COPY ./ml_pipeline ./ml_pipeline
 
-# Create storage directories for static assets and logs
+# Create runtime storage directories
 RUN mkdir -p backend/static/uploads backend/static/processed backend/static/reports logs
 
 # Expose backend port
 EXPOSE 8000
 
-# Default environment configurations
+# Default production environment configuration
 ENV APP_ENV=production
 ENV LOG_LEVEL=WARNING
 ENV PORT=8000
-ENV GUNICORN_WORKERS=4
+# IMPORTANT: SQLite does not support concurrent writes — keep workers=1
+# Switch to PostgreSQL and increase workers for multi-instance deployments
+ENV GUNICORN_WORKERS=1
 
 # Run FastAPI using Gunicorn with Uvicorn workers
-CMD ["sh", "-c", "gunicorn -w ${GUNICORN_WORKERS:-4} -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:8000"]
+# GUNICORN_WORKERS can be overridden at runtime via environment variable
+CMD ["sh", "-c", "gunicorn -w ${GUNICORN_WORKERS:-1} -k uvicorn.workers.UvicornWorker backend.main:app --bind 0.0.0.0:${PORT:-8000} --timeout 120"]

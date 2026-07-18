@@ -1,14 +1,21 @@
-# Stage 1: Build React frontend
+# BridgeGuardian AI — Frontend Production Dockerfile
+# Stage 1: Build React/Vite frontend
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install dependencies (layer-cached)
 COPY frontend/package*.json ./
 RUN npm ci
 
 # Copy frontend source code and configs
 COPY frontend/ .
+
+# VITE_API_BASE_URL: Set to your Render backend URL for Vercel/split deployments
+# e.g., --build-arg VITE_API_BASE_URL=https://bridgeguardian.onrender.com
+# Leave empty for Docker Compose (nginx proxy handles routing internally)
+ARG VITE_API_BASE_URL=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build production static files
 RUN npm run build

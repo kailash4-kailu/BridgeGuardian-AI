@@ -9,12 +9,17 @@ server:
   host: "0.0.0.0"
   port: 8000
   reload: false
-  workers: 4
+  # IMPORTANT: Keep workers=1 when using SQLite.
+  # Increase only after migrating to PostgreSQL.
+  workers: 1
 
 database:
   url: "sqlite:///./bridgeguardian.db"
   echo: false
 
+# NOTE: dataset.path is used ONLY by ml_pipeline/train.py (offline training).
+# The API runtime does NOT read from the dataset at all.
+# The dataset/ folder is excluded from Docker images and git.
 dataset:
   path: "dataset/bridge dataset.csv"
   timestamp_col: "Timestamp"
