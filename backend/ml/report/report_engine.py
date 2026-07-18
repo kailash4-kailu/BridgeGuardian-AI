@@ -467,7 +467,7 @@ class ReportEngine:
             [Paragraph("Maintenance Category Action", body_style), Paragraph(f"<b>{action}</b> ({priority} Priority)", body_style)],
             [Paragraph("Recommended Repair Window", body_style), Paragraph(f"Within {maintenance.get('repair_window_days')} days", body_style)],
             [Paragraph("Next Recommended Routine Inspection", body_style), Paragraph(f"Every {maintenance.get('inspection_interval_days')} days", body_style)],
-            [Paragraph("Reasoning for Remediation Action", body_style), Paragraph(f"Bridge score is downgraded by {round(health_predictions.get('health_baseline_score', 84.0) - health_predictions.get('health_score', 0.0), 1)} points due to the presence of {stats.get('critical_defect_count', 0)} critical defects, with worst severity rated as {max_severity}.", body_style)]
+            [Paragraph("Reasoning for Remediation Action", body_style), Paragraph(f"Bridge score is downgraded by {round(health_predictions.get('health_baseline_score', 84.0) - health_predictions.get('health_score', 0.0), 1)} points due to the presence of {stats.get('critical_defect_count', 0)} critical defects, with worst severity rated as {stats.get('maximum_severity', 'Minor')}.", body_style)]
         ]
         t_rec = Table(rec_data, colWidths=[200, 340])
         t_rec.setStyle(TableStyle([
