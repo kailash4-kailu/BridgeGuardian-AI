@@ -57,7 +57,7 @@ docker compose up --build -d
 ```
 
 Once execution finishes:
-- **Frontend Dashboard:** Access at [http://localhost]([http://localhost](http://localhost:3000/)) (port 80)
+- **Frontend Dashboard:** Access at [http://localhost]([http://localhost] (port 80)
 - **Backend API Docs:** Access interactive Swagger docs at [http://localhost/docs](http://localhost/docs) (or [http://localhost:8000/docs](http://localhost:8000/docs))
 - **SQLite Database:** Automatically initialized and written to the container volume.
 - **Application Logs:** Streamed to stdout and saved directly to `logs/app.log`.
