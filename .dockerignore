@@ -1,7 +1,6 @@
 # Version Control
 .git
 .gitignore
-.dockerignore
 
 # Python dependencies, cache, and tests
 .venv/
@@ -15,7 +14,7 @@ __pycache__/
 .coverage
 htmlcov/
 
-# Node dependencies and builds
+# Node dependencies and builds (frontend handled separately)
 node_modules/
 dist/
 frontend/node_modules/
@@ -29,6 +28,27 @@ logs/
 *.log
 runtime_logs/
 
+# Dataset (training-only — not needed at runtime, 36MB)
+dataset/
+
+# Test artifacts & local samples
+test_bridge_sample.jpg
+
+# AI agent workspace directories
+.agents/
+.codex/
+
+# Environment secrets (injected at runtime via platform env vars)
+.env
+.env.local
+.env.development
+.env.staging
+
+# Documentation & deployment files not needed in image
+deployment.md
+docs/
+README.md
+
 # IDE configurations
 .vscode/
 .idea/
@@ -37,3 +57,7 @@ runtime_logs/
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+.DS_Store
+Thumbs.db

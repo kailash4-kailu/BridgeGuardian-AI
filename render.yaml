@@ -1,0 +1,66 @@
+# BridgeGuardian AI — Render Deployment Blueprint
+# https://render.com/docs/blueprint-spec
+#
+# Deploy with: connect this repo in Render dashboard → "New Blueprint Instance"
+# Or: render deploy --config render.yaml
+#
+# IMPORTANT: Set the following secret environment variables in the Render dashboard
+# (do NOT put real values in this file):
+#   - SECRET_KEY
+#   - CORS_ORIGINS (set to your Vercel frontend URL)
+
+services:
+  - type: web
+    name: bridgeguardian-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.backend
+    plan: free          # Change to 'starter' or higher for production SLAs
+
+    # Health check — Render will restart the service if this fails
+    healthCheckPath: /api/v1/health
+
+    # Auto-deploy on every push to this branch
+    branch: deployment-prep   # Change to 'main' when ready for production
+
+    envVars:
+      # ── Core Settings ─────────────────────────────────────────────────────
+      - key: APP_ENV
+        value: production
+
+      - key: SECRET_KEY
+        generateValue: true    # Render auto-generates a secure random value
+
+      - key: LOG_LEVEL
+        value: WARNING
+
+      # ── Database ──────────────────────────────────────────────────────────
+      # SQLite (file-based, free tier) — data is ephemeral on Render free plan
+      # Upgrade to a Render PostgreSQL instance for persistent production data
+      - key: DATABASE_URL
+        value: sqlite:///./bridgeguardian.db
+
+      # ── CORS — set to your Vercel frontend URL ────────────────────────────
+      # Example: https://bridgeguardian-ai.vercel.app,https://your-custom-domain.com
+      - key: CORS_ORIGINS
+        value: http://localhost:3000   # REPLACE with Vercel URL after first deploy
+
+      # ── Worker Configuration ───────────────────────────────────────────────
+      # Keep at 1 while using SQLite — increase only after migrating to PostgreSQL
+      - key: GUNICORN_WORKERS
+        value: "1"
+
+      # ── Storage Paths ─────────────────────────────────────────────────────
+      - key: MODELS_DIR
+        value: models
+      - key: UPLOAD_DIR
+        value: backend/static/uploads
+      - key: PROCESSED_DIR
+        value: backend/static/processed
+      - key: REPORTS_DIR
+        value: backend/static/reports
+
+      # ── Feature Flags ─────────────────────────────────────────────────────
+      - key: DEMO_MODE
+        value: "true"
+      - key: MAX_UPLOAD_SIZE
+        value: "10485760"

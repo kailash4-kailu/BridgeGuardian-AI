@@ -23,12 +23,23 @@ yarn-error.log*
 *.db
 *.db-shm
 *.db-wal
-logs/
+logs/*
+!logs/.gitkeep
 *.log
 runtime_logs/
 backend/static/uploads/
 backend/static/processed/
 backend/static/reports/
+
+# Dataset (training-only, not needed at runtime)
+dataset/
+
+# Test artifacts
+test_bridge_sample.jpg
+
+# AI agent workspace directories
+.agents/
+.codex/
 
 # IDE files
 .vscode/
@@ -38,6 +49,10 @@ backend/static/reports/
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Environment secrets
 .env

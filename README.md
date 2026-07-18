@@ -131,4 +131,5 @@ npm run build
 ---
 
 ## 📄 Cloud Deployment Guide
-For detailed guidance on launching to VM instances (AWS EC2, Azure VM, Google Cloud VM), Railway, DigitalOcean, or Hostinger VPS, please refer to [deployment.md](file:///c:/Users/Acer/OneDrive/Desktop/ai%20bridge/deployment.md).
+For detailed guidance on launching to VM instances (AWS EC2, Azure VM, Google Cloud VM), Railway, DigitalOcean, or Hostinger VPS, please refer to [deployment.md](deployment.md).
+
