@@ -1,0 +1,100 @@
+app:
+  name: "BridgeGuardian AI"
+  version: "1.0.0"
+  description: "Explainable Predictive Maintenance for Bridge SHM"
+  debug: false
+  log_level: "INFO"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  workers: 1
+
+database:
+  url: "sqlite:///./bridgeguardian.db"
+  echo: false
+
+dataset:
+  path: "dataset/bridge dataset.csv"
+  timestamp_col: "Timestamp"
+
+features:
+  structural:
+    - Strain_microstrain
+    - Deflection_mm
+    - Vibration_ms2
+    - Tilt_deg
+    - Displacement_mm
+    - Crack_Propagation_mm
+    - Corrosion_Level_percent
+    - Cable_Member_Tension_kN
+    - Bearing_Joint_Forces_kN
+    - Fatigue_Accumulation_au
+    - Modal_Frequency_Hz
+  environmental:
+    - Temperature_C
+    - Humidity_percent
+    - Wind_Speed_ms
+    - Wind_Direction_deg
+    - Precipitation_mmh
+    - Water_Level_m
+    - Seismic_Activity_ms2
+    - Solar_Radiation_Wm2
+    - Air_Quality_Index_AQI
+    - Soil_Settlement_mm
+  load:
+    - Vehicle_Load_tons
+    - Traffic_Volume_vph
+    - Pedestrian_Load_pph
+    - Impact_Events_g
+    - Dynamic_Load_Distribution_percent
+    - Axle_Counts_pmin
+  sensor:
+    - Anomaly_Detection_Score
+    - Energy_Dissipation_au
+    - Acoustic_Emissions_levels
+    - Visual_Analysis_Defect_Score
+    - Electrical_Resistance_ohms
+    - Localized_Strain_Hotspot
+  categorical:
+    - Bridge_Mood_Meter
+    - Vibration_Anomaly_Location
+  event_flags:
+    - Flood_Event_Flag
+    - High_Winds_Storms
+    - Landslide_Ground_Movement
+    - Abnormal_Traffic_Load_Surges
+
+targets:
+  health_score: "Structural_Health_Index_SHI"
+  failure_prob: "Probability_of_Failure_PoF"
+  maintenance_alert: "Maintenance_Alert"
+  shi_24h: "SHI_Predicted_24h_Ahead"
+  shi_7d: "SHI_Predicted_7d_Ahead"
+  shi_30d: "SHI_Predicted_30d_Ahead"
+  repair_cost: "Estimated_Repair_Cost_USD_incremental"
+
+thresholds:
+  shi_critical: 0.40
+  shi_poor: 0.60
+  shi_fair: 0.75
+  shi_good: 0.85
+  shi_excellent: 1.0
+  pof_low: 0.05
+  pof_medium: 0.10
+  pof_high: 0.20
+
+ml:
+  test_size: 0.20
+  val_size: 0.10
+  random_state: 42
+  cv_folds: 3
+  n_jobs: 1
+  shap_max_samples: 200
+  models_dir: "models"
+
+training:
+  rolling_windows: [5, 15, 30, 60]
+  lag_features: [1, 5, 15, 30]
+  n_iter_search: 5

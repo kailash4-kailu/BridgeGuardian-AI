@@ -1,0 +1,47 @@
+# Python virtual environments & compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# JavaScript & Node dependencies & builds
+node_modules/
+dist/
+.svelte-kit/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Databases and runtime files
+*.db
+*.db-shm
+*.db-wal
+logs/
+*.log
+runtime_logs/
+backend/static/uploads/
+backend/static/processed/
+backend/static/reports/
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment secrets
+.env
+.env.local
+.env.production
+.env.development
+.env.staging

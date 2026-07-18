@@ -1,0 +1,1787 @@
+{
+  "shi_24h": {
+    "target": "SHI_Predicted_24h_Ahead",
+    "task": "regression",
+    "best_algorithm": "RandomForest",
+    "metrics": {
+      "r2": -0.1438,
+      "rmse": 0.045758,
+      "mae": 0.023014,
+      "mape": 3.18
+    },
+    "training_info": {
+      "best_model_name": "RandomForest",
+      "results": {
+        "RandomForest": {
+          "params": {
+            "n_estimators": 3,
+            "max_depth": 3
+          },
+          "cv_score": -1.70469481929252,
+          "train_time_s": 0.11,
+          "evaluation": {
+            "r2": -0.1438,
+            "rmse": 0.045758,
+            "mae": 0.023014,
+            "mape": 3.18
+          }
+        }
+      }
+    },
+    "feature_count": 60,
+    "feature_selection": {
+      "target_name": "SHI_Predicted_24h_Ahead",
+      "selected_features": [
+        "Deflection_mm",
+        "Strain_microstrain",
+        "Vibration_ms2",
+        "Strain_microstrain_ema_5",
+        "composite_stress_index",
+        "Vibration_ms2_ema_5",
+        "Acoustic_Emissions_levels",
+        "Vibration_ms2_ema_15",
+        "shi_degradation_velocity",
+        "Modal_Frequency_Hz",
+        "Vehicle_Load_tons",
+        "traffic_x_vehicle_load",
+        "Corrosion_Level_percent_roll_mean_15",
+        "Strain_microstrain_roc_5",
+        "Dynamic_Load_Distribution_percent",
+        "Fatigue_Accumulation_au_roll_median_5",
+        "Crack_Propagation_mm_roll_median_30",
+        "Corrosion_Level_percent_roll_median_5",
+        "Fatigue_Accumulation_au_roll_std_30",
+        "Corrosion_Level_percent_roll_std_15",
+        "Air_Quality_Index_AQI",
+        "Strain_microstrain_lag_30",
+        "Vibration_ms2_acceleration_1",
+        "Vibration_ms2_roll_median_5",
+        "Deflection_mm_acceleration_5",
+        "Corrosion_Level_percent_roll_std_5",
+        "Electrical_Resistance_ohms",
+        "Corrosion_Level_percent_roll_median_60",
+        "temperature_x_strain",
+        "Vibration_ms2_roll_mean_5",
+        "Vibration_ms2_roll_median_15",
+        "Fatigue_Accumulation_au_roll_std_5",
+        "Fatigue_Accumulation_au_ema_5",
+        "Corrosion_Level_percent_roll_mean_5",
+        "Crack_Propagation_mm_roll_mean_30",
+        "Crack_Propagation_mm_roll_mean_15",
+        "Vibration_ms2_roll_std_60",
+        "Crack_Propagation_mm_acceleration_1",
+        "Vibration_ms2_expanding_std",
+        "Deflection_mm_roll_std_15",
+        "Cable_Member_Tension_kN",
+        "Crack_Propagation_mm_ema_15",
+        "Vibration_ms2_roll_mean_60",
+        "Visual_Analysis_Defect_Score",
+        "Humidity_percent",
+        "Corrosion_Level_percent_roll_median_15",
+        "Strain_microstrain_acceleration_1",
+        "Strain_microstrain_roll_mean_15",
+        "Wind_Speed_ms",
+        "vibration_x_fatigue",
+        "Crack_Propagation_mm_acceleration_5",
+        "Soil_Settlement_mm",
+        "Soil_Saturation_percent",
+        "Strain_microstrain_roll_std_5",
+        "Deflection_mm_roll_std_30",
+        "Deflection_mm_roc_5",
+        "Energy_Dissipation_au",
+        "Tilt_deg",
+        "Fatigue_Accumulation_au_expanding_mean",
+        "Vibration_ms2_roll_median_30"
+      ],
+      "selected_method": "permutation_importance",
+      "baseline_score": 0.454849,
+      "selected_score": 0.565036,
+      "method_scores": {
+        "all_features": 0.454849,
+        "mutual_information": 0.446332,
+        "permutation_importance": 0.565036,
+        "recursive_feature_elimination": 0.524886
+      },
+      "importances": [
+        {
+          "feature": "Deflection_mm",
+          "importance": 0.41577202,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain",
+          "importance": 0.21521243,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2",
+          "importance": 0.04930271,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_ema_5",
+          "importance": 0.02321391,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "composite_stress_index",
+          "importance": 0.01599997,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_5",
+          "importance": 0.01281943,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Acoustic_Emissions_levels",
+          "importance": 0.00898948,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_15",
+          "importance": 0.00658264,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "shi_degradation_velocity",
+          "importance": 0.00552945,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Modal_Frequency_Hz",
+          "importance": 0.00383298,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vehicle_Load_tons",
+          "importance": 0.00374963,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "traffic_x_vehicle_load",
+          "importance": 0.00246304,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_15",
+          "importance": 0.00209112,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roc_5",
+          "importance": 0.00198753,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Dynamic_Load_Distribution_percent",
+          "importance": 0.00129425,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_median_5",
+          "importance": 0.00129282,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_median_30",
+          "importance": 0.0012626,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_5",
+          "importance": 0.00117212,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_std_30",
+          "importance": 0.00117009,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_15",
+          "importance": 0.00098122,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Air_Quality_Index_AQI",
+          "importance": 0.00094425,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_30",
+          "importance": 0.00093219,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_1",
+          "importance": 0.00091921,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_5",
+          "importance": 0.00085553,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_acceleration_5",
+          "importance": 0.00083298,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_5",
+          "importance": 0.00082463,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Electrical_Resistance_ohms",
+          "importance": 0.00077579,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_60",
+          "importance": 0.00076415,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "temperature_x_strain",
+          "importance": 0.00076015,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_5",
+          "importance": 0.00064434,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_15",
+          "importance": 0.00058242,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_std_5",
+          "importance": 0.00049896,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_5",
+          "importance": 0.00047487,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_5",
+          "importance": 0.00045577,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_mean_30",
+          "importance": 0.00045309,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_mean_15",
+          "importance": 0.00043849,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_60",
+          "importance": 0.00039407,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_acceleration_1",
+          "importance": 0.00038787,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_expanding_std",
+          "importance": 0.00035174,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roll_std_15",
+          "importance": 0.00034117,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Cable_Member_Tension_kN",
+          "importance": 0.00031848,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_ema_15",
+          "importance": 0.00030495,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_60",
+          "importance": 0.00028994,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Visual_Analysis_Defect_Score",
+          "importance": 0.00028407,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Humidity_percent",
+          "importance": 0.0002444,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_15",
+          "importance": 0.00019798,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_acceleration_1",
+          "importance": 0.000177,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_mean_15",
+          "importance": 0.00017456,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Wind_Speed_ms",
+          "importance": 0.00017388,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "vibration_x_fatigue",
+          "importance": 0.000159,
+          "method": "permutation_importance"
+        }
+      ]
+    }
+  },
+  "shi_7d": {
+    "target": "SHI_Predicted_7d_Ahead",
+    "task": "regression",
+    "best_algorithm": "RandomForest",
+    "metrics": {
+      "r2": -0.1172,
+      "rmse": 0.044264,
+      "mae": 0.023569,
+      "mape": 3.3
+    },
+    "training_info": {
+      "best_model_name": "RandomForest",
+      "results": {
+        "RandomForest": {
+          "params": {
+            "n_estimators": 3,
+            "max_depth": 3
+          },
+          "cv_score": -1.3845260999898903,
+          "train_time_s": 0.11,
+          "evaluation": {
+            "r2": -0.1172,
+            "rmse": 0.044264,
+            "mae": 0.023569,
+            "mape": 3.3
+          }
+        }
+      }
+    },
+    "feature_count": 60,
+    "feature_selection": {
+      "target_name": "SHI_Predicted_7d_Ahead",
+      "selected_features": [
+        "Deflection_mm",
+        "Deflection_mm_roc_1",
+        "shi_degradation_velocity",
+        "Electrical_Resistance_ohms",
+        "Vibration_ms2",
+        "Vibration_ms2_roll_median_5",
+        "load_intensity",
+        "Vibration_ms2_roll_mean_5",
+        "Vibration_ms2_lag_1",
+        "Strain_microstrain_roc_1",
+        "Strain_microstrain_roc_5",
+        "traffic_x_vehicle_load",
+        "Displacement_mm",
+        "Strain_microstrain",
+        "Corrosion_Level_percent_roll_median_15",
+        "Vibration_ms2_roll_median_15",
+        "Acoustic_Emissions_levels",
+        "Vibration_ms2_expanding_mean",
+        "Soil_Settlement_mm",
+        "Strain_microstrain_ema_5",
+        "Corrosion_Level_percent_ema_15",
+        "Vibration_ms2_ema_5",
+        "Vibration_ms2_roll_mean_15",
+        "Vibration_ms2_lag_5",
+        "Corrosion_Level_percent_roll_mean_15",
+        "Corrosion_Level_percent_roll_median_60",
+        "Deflection_mm_roc_5",
+        "Vibration_ms2_lag_15",
+        "Humidity_percent",
+        "Strain_microstrain_roll_median_30",
+        "Deflection_mm_roll_std_15",
+        "Fatigue_Accumulation_au_ema_60",
+        "Corrosion_Level_percent_roll_mean_5",
+        "humidity_x_corrosion",
+        "Vibration_ms2_roll_std_30",
+        "Tilt_deg",
+        "Pedestrian_Load_pph",
+        "Vibration_ms2_roll_median_30",
+        "Corrosion_Level_percent",
+        "Crack_Propagation_mm",
+        "Seismic_Activity_ms2",
+        "Deflection_mm_roll_mean_5",
+        "Air_Quality_Index_AQI",
+        "Strain_microstrain_lag_15",
+        "Vibration_ms2_roll_max_60",
+        "Traffic_Volume_vph",
+        "Strain_microstrain_acceleration_5",
+        "Strain_microstrain_roll_median_5",
+        "Strain_microstrain_roll_median_15",
+        "Corrosion_Level_percent_roll_mean_30",
+        "Corrosion_Level_percent_expanding_std",
+        "Crack_Propagation_mm_ema_15",
+        "Fatigue_Accumulation_au",
+        "Crack_Propagation_mm_roll_std_5",
+        "Crack_Propagation_mm_roll_std_15",
+        "Crack_Propagation_mm_roll_mean_30",
+        "Crack_Propagation_mm_acceleration_5",
+        "Crack_Propagation_mm_roll_median_30",
+        "Corrosion_Level_percent_roll_median_5",
+        "Crack_Propagation_mm_roll_min_30"
+      ],
+      "selected_method": "permutation_importance",
+      "baseline_score": 0.037466,
+      "selected_score": 0.202019,
+      "method_scores": {
+        "all_features": 0.037466,
+        "mutual_information": 0.088922,
+        "permutation_importance": 0.202019,
+        "recursive_feature_elimination": 0.043246
+      },
+      "importances": [
+        {
+          "feature": "Deflection_mm",
+          "importance": 0.04649596,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roc_1",
+          "importance": 0.01525292,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "shi_degradation_velocity",
+          "importance": 0.01148923,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Electrical_Resistance_ohms",
+          "importance": 0.00968106,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2",
+          "importance": 0.00908594,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_5",
+          "importance": 0.00872425,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "load_intensity",
+          "importance": 0.00708765,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_5",
+          "importance": 0.00696679,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_lag_1",
+          "importance": 0.00562673,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roc_1",
+          "importance": 0.00350668,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roc_5",
+          "importance": 0.00342443,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "traffic_x_vehicle_load",
+          "importance": 0.00308437,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Displacement_mm",
+          "importance": 0.00298097,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain",
+          "importance": 0.00233588,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_15",
+          "importance": 0.00232515,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_15",
+          "importance": 0.00228695,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Acoustic_Emissions_levels",
+          "importance": 0.00210673,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_expanding_mean",
+          "importance": 0.00208563,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Soil_Settlement_mm",
+          "importance": 0.00196505,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_ema_5",
+          "importance": 0.0019182,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_ema_15",
+          "importance": 0.0018677,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_5",
+          "importance": 0.00184082,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_15",
+          "importance": 0.00162419,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_lag_5",
+          "importance": 0.00161303,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_15",
+          "importance": 0.00152503,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_60",
+          "importance": 0.00144579,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roc_5",
+          "importance": 0.00144018,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_lag_15",
+          "importance": 0.00140846,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Humidity_percent",
+          "importance": 0.00140676,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_median_30",
+          "importance": 0.00139102,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roll_std_15",
+          "importance": 0.00137293,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_60",
+          "importance": 0.00134233,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_5",
+          "importance": 0.00123684,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "humidity_x_corrosion",
+          "importance": 0.00121843,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_30",
+          "importance": 0.0011692,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Tilt_deg",
+          "importance": 0.00115548,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Pedestrian_Load_pph",
+          "importance": 0.00112662,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_30",
+          "importance": 0.00105363,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent",
+          "importance": 0.00104593,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm",
+          "importance": 0.00099575,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Seismic_Activity_ms2",
+          "importance": 0.00097396,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roll_mean_5",
+          "importance": 0.00096499,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Air_Quality_Index_AQI",
+          "importance": 0.00093524,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_15",
+          "importance": 0.00090172,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_max_60",
+          "importance": 0.00090151,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Traffic_Volume_vph",
+          "importance": 0.00085658,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_acceleration_5",
+          "importance": 0.00085603,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_median_5",
+          "importance": 0.00084975,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_median_15",
+          "importance": 0.00084245,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_30",
+          "importance": 0.00069146,
+          "method": "permutation_importance"
+        }
+      ]
+    }
+  },
+  "shi_30d": {
+    "target": "SHI_Predicted_30d_Ahead",
+    "task": "regression",
+    "best_algorithm": "RandomForest",
+    "metrics": {
+      "r2": -0.2173,
+      "rmse": 0.052123,
+      "mae": 0.035995,
+      "mape": 5.25
+    },
+    "training_info": {
+      "best_model_name": "RandomForest",
+      "results": {
+        "RandomForest": {
+          "params": {
+            "n_estimators": 3,
+            "max_depth": 3
+          },
+          "cv_score": -0.19954236782449075,
+          "train_time_s": 0.09,
+          "evaluation": {
+            "r2": -0.2173,
+            "rmse": 0.052123,
+            "mae": 0.035995,
+            "mape": 5.25
+          }
+        }
+      }
+    },
+    "feature_count": 60,
+    "feature_selection": {
+      "target_name": "SHI_Predicted_30d_Ahead",
+      "selected_features": [
+        "Strain_microstrain_roll_median_5",
+        "Deflection_mm",
+        "Corrosion_Level_percent_roll_median_60",
+        "Air_Quality_Index_AQI",
+        "shi_degradation_velocity",
+        "Vibration_ms2_roll_std_15",
+        "Corrosion_Level_percent",
+        "Strain_microstrain_lag_1",
+        "Vibration_ms2_roll_std_5",
+        "Corrosion_Level_percent_roll_std_5",
+        "Fatigue_Accumulation_au_roc_1",
+        "Deflection_mm_roc_1",
+        "Traffic_Volume_vph",
+        "Strain_microstrain",
+        "Vibration_ms2_roll_median_15",
+        "Vibration_ms2_acceleration_1",
+        "Fatigue_Accumulation_au_ema_60",
+        "Vibration_ms2_roll_median_60",
+        "Fatigue_Accumulation_au_roll_mean_60",
+        "Vibration_ms2_ema_60",
+        "Vibration_ms2_roll_std_30",
+        "Wind_Speed_ms",
+        "Fatigue_Accumulation_au_roll_median_30",
+        "Fatigue_Accumulation_au_roll_mean_30",
+        "Crack_Propagation_mm_roll_mean_5",
+        "Tilt_deg",
+        "Crack_Propagation_mm_roll_median_5",
+        "Crack_Propagation_mm_acceleration_1",
+        "Corrosion_Level_percent_roll_std_60",
+        "Strain_microstrain_roll_mean_15",
+        "Vibration_ms2_roll_median_5",
+        "Fatigue_Accumulation_au",
+        "Impact_Events_g",
+        "Axle_Counts_pmin",
+        "crack_x_corrosion",
+        "Seismic_Activity_ms2",
+        "Vibration_ms2_expanding_std",
+        "Fatigue_Accumulation_au_roll_mean_5",
+        "Corrosion_Level_percent_roll_median_30",
+        "Vibration_ms2_roll_std_60",
+        "Vibration_ms2_lag_5",
+        "Strain_microstrain_roll_mean_5",
+        "Fatigue_Accumulation_au_ema_15",
+        "Vibration_ms2_ema_5",
+        "Fatigue_Accumulation_au_roll_std_60",
+        "Strain_microstrain_acceleration_5",
+        "Vibration_ms2_ema_30",
+        "Deflection_mm_acceleration_5",
+        "Crack_Propagation_mm_ema_5",
+        "Deflection_mm_roll_std_60",
+        "Fatigue_Accumulation_au_roll_median_60",
+        "Corrosion_Level_percent_roll_mean_60",
+        "Vibration_ms2_lag_15",
+        "Crack_Propagation_mm",
+        "composite_env_index",
+        "Strain_microstrain_roll_std_30",
+        "Strain_microstrain_roll_median_15",
+        "Corrosion_Level_percent_roll_mean_15",
+        "Temperature_C",
+        "Crack_Propagation_mm_ema_60"
+      ],
+      "selected_method": "permutation_importance",
+      "baseline_score": 0.003198,
+      "selected_score": 0.078702,
+      "method_scores": {
+        "all_features": 0.003198,
+        "mutual_information": -0.045493,
+        "permutation_importance": 0.078702,
+        "recursive_feature_elimination": -0.002439
+      },
+      "importances": [
+        {
+          "feature": "Strain_microstrain_roll_median_5",
+          "importance": 0.01898784,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm",
+          "importance": 0.0108246,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_60",
+          "importance": 0.00889625,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Air_Quality_Index_AQI",
+          "importance": 0.00853475,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "shi_degradation_velocity",
+          "importance": 0.00834368,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_15",
+          "importance": 0.00758864,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent",
+          "importance": 0.00669862,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_1",
+          "importance": 0.00664305,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_5",
+          "importance": 0.00660207,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_5",
+          "importance": 0.00611085,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roc_1",
+          "importance": 0.00501661,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roc_1",
+          "importance": 0.00501474,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Traffic_Volume_vph",
+          "importance": 0.00464334,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain",
+          "importance": 0.00399779,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_15",
+          "importance": 0.00393741,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_1",
+          "importance": 0.00345467,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_60",
+          "importance": 0.00290426,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_60",
+          "importance": 0.00276214,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_60",
+          "importance": 0.00274641,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_60",
+          "importance": 0.00262941,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_30",
+          "importance": 0.00251554,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Wind_Speed_ms",
+          "importance": 0.00215405,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_median_30",
+          "importance": 0.00211498,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_30",
+          "importance": 0.00204404,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_mean_5",
+          "importance": 0.00201211,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Tilt_deg",
+          "importance": 0.00191961,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_median_5",
+          "importance": 0.00189416,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_acceleration_1",
+          "importance": 0.00164786,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_60",
+          "importance": 0.00150206,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_mean_15",
+          "importance": 0.00137171,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_5",
+          "importance": 0.00135238,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au",
+          "importance": 0.00130768,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Impact_Events_g",
+          "importance": 0.00130096,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Axle_Counts_pmin",
+          "importance": 0.0012903,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "crack_x_corrosion",
+          "importance": 0.00127299,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Seismic_Activity_ms2",
+          "importance": 0.00118336,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_expanding_std",
+          "importance": 0.00117719,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_5",
+          "importance": 0.00109812,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_30",
+          "importance": 0.001081,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_60",
+          "importance": 0.00106288,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_lag_5",
+          "importance": 0.0010576,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_mean_5",
+          "importance": 0.00104479,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_15",
+          "importance": 0.00099669,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_5",
+          "importance": 0.0009964,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_std_60",
+          "importance": 0.00094552,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_acceleration_5",
+          "importance": 0.00091581,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_30",
+          "importance": 0.00091386,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_acceleration_5",
+          "importance": 0.0008579,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_ema_5",
+          "importance": 0.00085076,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roll_std_60",
+          "importance": 0.00077366,
+          "method": "permutation_importance"
+        }
+      ]
+    }
+  },
+  "failure_prob": {
+    "target": "Probability_of_Failure_PoF",
+    "task": "regression",
+    "best_algorithm": "RandomForest",
+    "metrics": {
+      "r2": 0.3109,
+      "rmse": 0.007259,
+      "mae": 0.003818,
+      "mape": 8.5
+    },
+    "training_info": {
+      "best_model_name": "RandomForest",
+      "results": {
+        "RandomForest": {
+          "params": {
+            "n_estimators": 3,
+            "max_depth": 3
+          },
+          "cv_score": 0.6695668203462745,
+          "train_time_s": 0.1,
+          "evaluation": {
+            "r2": 0.3109,
+            "rmse": 0.007259,
+            "mae": 0.003818,
+            "mape": 8.5
+          }
+        }
+      }
+    },
+    "feature_count": 60,
+    "feature_selection": {
+      "target_name": "Probability_of_Failure_PoF",
+      "selected_features": [
+        "wind_x_deflection",
+        "Wind_Speed_ms",
+        "Water_Level_m",
+        "Strain_microstrain",
+        "composite_env_index",
+        "Vibration_ms2_acceleration_5",
+        "Cable_Member_Tension_kN",
+        "Fatigue_Accumulation_au_roll_std_15",
+        "Soil_Settlement_mm",
+        "Crack_Propagation_mm_acceleration_5",
+        "Vibration_ms2",
+        "Strain_microstrain_roc_1",
+        "Fatigue_Accumulation_au_roll_std_30",
+        "Deflection_mm_acceleration_5",
+        "Strain_microstrain_lag_5",
+        "Fatigue_Accumulation_au_roll_median_60",
+        "Strain_microstrain_ema_5",
+        "shi_degradation_velocity",
+        "Fatigue_Accumulation_au_roll_median_15",
+        "Strain_microstrain_lag_15",
+        "Strain_microstrain_lag_1",
+        "Corrosion_Level_percent_roll_min_30",
+        "Temperature_C",
+        "composite_stress_index",
+        "Fatigue_Accumulation_au_ema_15",
+        "Corrosion_Level_percent_roll_std_30",
+        "Vibration_ms2_acceleration_1",
+        "Corrosion_Level_percent_roll_median_5",
+        "crack_x_corrosion",
+        "humidity_x_corrosion",
+        "Energy_Harvesting_Potential_W",
+        "Corrosion_Level_percent_roll_std_15",
+        "Fatigue_Accumulation_au_roll_median_5",
+        "vibration_x_fatigue",
+        "Precipitation_mmh",
+        "Fatigue_Accumulation_au_roll_mean_5",
+        "Fatigue_Accumulation_au_ema_5",
+        "Vibration_ms2_roll_median_5",
+        "Vibration_ms2_roll_median_30",
+        "Deflection_mm_acceleration_1",
+        "Fatigue_Accumulation_au_roll_mean_15",
+        "Solar_Radiation_Wm2",
+        "Deflection_mm_roc_5",
+        "Vibration_ms2_roll_std_30",
+        "Corrosion_Level_percent",
+        "Vibration_ms2_roll_max_60",
+        "Strain_microstrain_roll_std_60",
+        "Vibration_ms2_lag_1",
+        "Crack_Propagation_mm_roll_min_30",
+        "Traffic_Volume_vph",
+        "Vibration_ms2_roll_max_30",
+        "Vibration_ms2_ema_30",
+        "Humidity_percent",
+        "Corrosion_Level_percent_roll_std_5",
+        "Corrosion_Level_percent_ema_5",
+        "Crack_Propagation_mm_roll_std_5",
+        "Pedestrian_Load_pph",
+        "Deflection_mm_roc_1",
+        "Crack_Propagation_mm_roll_mean_30",
+        "Fatigue_Accumulation_au_ema_30"
+      ],
+      "selected_method": "permutation_importance",
+      "baseline_score": 0.851898,
+      "selected_score": 0.880693,
+      "method_scores": {
+        "all_features": 0.851898,
+        "mutual_information": 0.84624,
+        "permutation_importance": 0.880693,
+        "recursive_feature_elimination": 0.856024
+      },
+      "importances": [
+        {
+          "feature": "wind_x_deflection",
+          "importance": 1.5947823,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Wind_Speed_ms",
+          "importance": 0.05903456,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Water_Level_m",
+          "importance": 0.00955602,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain",
+          "importance": 0.00718648,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "composite_env_index",
+          "importance": 0.00646398,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_5",
+          "importance": 0.00192585,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Cable_Member_Tension_kN",
+          "importance": 0.00106341,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_std_15",
+          "importance": 0.00099556,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Soil_Settlement_mm",
+          "importance": 0.00094486,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_acceleration_5",
+          "importance": 0.00085646,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2",
+          "importance": 0.00079682,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roc_1",
+          "importance": 0.00073973,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_std_30",
+          "importance": 0.00064904,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_acceleration_5",
+          "importance": 0.0006407,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_5",
+          "importance": 0.00054612,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_median_60",
+          "importance": 0.00048174,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_ema_5",
+          "importance": 0.00043319,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "shi_degradation_velocity",
+          "importance": 0.00041787,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_median_15",
+          "importance": 0.00041101,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_15",
+          "importance": 0.00040514,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_1",
+          "importance": 0.00038528,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_min_30",
+          "importance": 0.00037436,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Temperature_C",
+          "importance": 0.00037419,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "composite_stress_index",
+          "importance": 0.00037324,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_15",
+          "importance": 0.00034539,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_30",
+          "importance": 0.00033044,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_1",
+          "importance": 0.00031075,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_median_5",
+          "importance": 0.00031042,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "crack_x_corrosion",
+          "importance": 0.00029917,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "humidity_x_corrosion",
+          "importance": 0.0002616,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Energy_Harvesting_Potential_W",
+          "importance": 0.00023818,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_15",
+          "importance": 0.00022974,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_median_5",
+          "importance": 0.00019607,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "vibration_x_fatigue",
+          "importance": 0.00019067,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Precipitation_mmh",
+          "importance": 0.00018387,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_5",
+          "importance": 0.00016927,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_5",
+          "importance": 0.00016578,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_5",
+          "importance": 0.00014671,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_30",
+          "importance": 0.00014148,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_acceleration_1",
+          "importance": 0.00013584,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_15",
+          "importance": 0.0001236,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Solar_Radiation_Wm2",
+          "importance": 0.00011993,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roc_5",
+          "importance": 0.00011702,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_30",
+          "importance": 0.00011476,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent",
+          "importance": 0.00010997,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_max_60",
+          "importance": 0.00010632,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_std_60",
+          "importance": 0.00010067,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_lag_1",
+          "importance": 0.00010051,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_min_30",
+          "importance": 9.995e-05,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Traffic_Volume_vph",
+          "importance": 9.55e-05,
+          "method": "permutation_importance"
+        }
+      ]
+    }
+  },
+  "health_score": {
+    "target": "Structural_Health_Index_SHI",
+    "task": "regression",
+    "best_algorithm": "RandomForest",
+    "metrics": {
+      "r2": -0.1117,
+      "rmse": 0.045415,
+      "mae": 0.022595,
+      "mape": 3.12
+    },
+    "training_info": {
+      "best_model_name": "RandomForest",
+      "results": {
+        "RandomForest": {
+          "params": {
+            "n_estimators": 3,
+            "max_depth": 3
+          },
+          "cv_score": -3.6329887193669066,
+          "train_time_s": 0.11,
+          "evaluation": {
+            "r2": -0.1117,
+            "rmse": 0.045415,
+            "mae": 0.022595,
+            "mape": 3.12
+          }
+        }
+      }
+    },
+    "feature_count": 60,
+    "feature_selection": {
+      "target_name": "Structural_Health_Index_SHI",
+      "selected_features": [
+        "Deflection_mm",
+        "Strain_microstrain",
+        "composite_stress_index",
+        "Strain_microstrain_ema_5",
+        "Vibration_ms2",
+        "Strain_microstrain_roc_5",
+        "Traffic_Volume_vph",
+        "Vibration_ms2_ema_5",
+        "shi_degradation_velocity",
+        "Vibration_ms2_roll_mean_5",
+        "Strain_microstrain_roll_median_5",
+        "Strain_microstrain_roll_mean_5",
+        "Vibration_ms2_roll_mean_60",
+        "Strain_microstrain_acceleration_5",
+        "Vibration_ms2_expanding_mean",
+        "Vibration_ms2_ema_15",
+        "Modal_Frequency_Hz",
+        "Wind_Direction_deg",
+        "Strain_microstrain_lag_30",
+        "Strain_microstrain_roll_mean_30",
+        "Deflection_mm_acceleration_5",
+        "Fatigue_Accumulation_au_acceleration_1",
+        "Vibration_ms2_roll_median_5",
+        "Strain_microstrain_lag_1",
+        "Vibration_ms2_acceleration_5",
+        "Dynamic_Load_Distribution_percent",
+        "Bearing_Joint_Forces_kN",
+        "Corrosion_Level_percent_roll_std_5",
+        "Humidity_percent",
+        "Vibration_ms2_acceleration_1",
+        "Corrosion_Level_percent_roll_std_30",
+        "traffic_x_vehicle_load",
+        "Deflection_mm_roc_5",
+        "Deflection_mm_roll_std_30",
+        "Crack_Propagation_mm_roll_median_30",
+        "Crack_Propagation_mm_ema_5",
+        "Fatigue_Accumulation_au_ema_5",
+        "Corrosion_Level_percent_roll_std_60",
+        "Vibration_ms2_roll_max_60",
+        "Tilt_deg",
+        "Axle_Counts_pmin",
+        "Energy_Dissipation_au",
+        "Corrosion_Level_percent_roll_mean_15",
+        "Fatigue_Accumulation_au_roll_mean_30",
+        "Vibration_ms2_roll_std_30",
+        "load_intensity",
+        "Soil_Saturation_percent",
+        "Corrosion_Level_percent_expanding_std",
+        "Fatigue_Accumulation_au_acceleration_5",
+        "Corrosion_Level_percent_roll_mean_30",
+        "Vibration_ms2_expanding_std",
+        "Displacement_mm",
+        "Strain_microstrain_ema_15",
+        "Vibration_ms2_roll_std_15",
+        "wind_x_deflection",
+        "Impact_Events_g",
+        "Strain_microstrain_roll_min_30",
+        "Fatigue_Accumulation_au_roll_mean_5",
+        "Energy_Harvesting_Potential_W",
+        "Air_Quality_Index_AQI"
+      ],
+      "selected_method": "permutation_importance",
+      "baseline_score": 0.368638,
+      "selected_score": 0.440089,
+      "method_scores": {
+        "all_features": 0.368638,
+        "mutual_information": 0.369415,
+        "permutation_importance": 0.440089,
+        "recursive_feature_elimination": 0.424082
+      },
+      "importances": [
+        {
+          "feature": "Deflection_mm",
+          "importance": 0.27679472,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain",
+          "importance": 0.17278515,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "composite_stress_index",
+          "importance": 0.03679106,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_ema_5",
+          "importance": 0.02716169,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2",
+          "importance": 0.01159976,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roc_5",
+          "importance": 0.00926221,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Traffic_Volume_vph",
+          "importance": 0.00455295,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_5",
+          "importance": 0.00385806,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "shi_degradation_velocity",
+          "importance": 0.00341701,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_5",
+          "importance": 0.00269127,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_median_5",
+          "importance": 0.00255527,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_mean_5",
+          "importance": 0.00253843,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_mean_60",
+          "importance": 0.00188352,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_acceleration_5",
+          "importance": 0.00187242,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_expanding_mean",
+          "importance": 0.0017511,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_ema_15",
+          "importance": 0.00169311,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Modal_Frequency_Hz",
+          "importance": 0.00157454,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Wind_Direction_deg",
+          "importance": 0.0014637,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_30",
+          "importance": 0.00125015,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_roll_mean_30",
+          "importance": 0.00108499,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_acceleration_5",
+          "importance": 0.00107764,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_acceleration_1",
+          "importance": 0.00102403,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_median_5",
+          "importance": 0.00100053,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Strain_microstrain_lag_1",
+          "importance": 0.00098809,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_5",
+          "importance": 0.00098592,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Dynamic_Load_Distribution_percent",
+          "importance": 0.00092789,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Bearing_Joint_Forces_kN",
+          "importance": 0.00084096,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_5",
+          "importance": 0.00081512,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Humidity_percent",
+          "importance": 0.00074171,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_acceleration_1",
+          "importance": 0.00073488,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_30",
+          "importance": 0.00071381,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "traffic_x_vehicle_load",
+          "importance": 0.0006998,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roc_5",
+          "importance": 0.00066051,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Deflection_mm_roll_std_30",
+          "importance": 0.00065485,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_roll_median_30",
+          "importance": 0.00063154,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Crack_Propagation_mm_ema_5",
+          "importance": 0.00060733,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_ema_5",
+          "importance": 0.00057562,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_std_60",
+          "importance": 0.00056335,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_max_60",
+          "importance": 0.00055668,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Tilt_deg",
+          "importance": 0.0005448,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Axle_Counts_pmin",
+          "importance": 0.0005415,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Energy_Dissipation_au",
+          "importance": 0.0005326,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_15",
+          "importance": 0.00051572,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_roll_mean_30",
+          "importance": 0.00049831,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Vibration_ms2_roll_std_30",
+          "importance": 0.00042904,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "load_intensity",
+          "importance": 0.00042573,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Soil_Saturation_percent",
+          "importance": 0.00040207,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_expanding_std",
+          "importance": 0.00038616,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Fatigue_Accumulation_au_acceleration_5",
+          "importance": 0.0003544,
+          "method": "permutation_importance"
+        },
+        {
+          "feature": "Corrosion_Level_percent_roll_mean_30",
+          "importance": 0.00033587,
+          "method": "permutation_importance"
+        }
+      ]
+    }
+  }
+}

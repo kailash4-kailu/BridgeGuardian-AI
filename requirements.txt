@@ -1,0 +1,42 @@
+# BridgeGuardian AI — Production Backend Dependencies
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+gunicorn==23.0.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-dotenv==1.0.1
+pyyaml==6.0.2
+
+# Database
+sqlalchemy==2.0.35
+alembic==1.13.3
+
+# ML Core
+scikit-learn==1.5.2
+xgboost==2.1.1
+lightgbm==4.5.0
+catboost==1.2.7
+shap==0.46.0
+
+# Data
+pandas==2.2.3
+numpy==1.26.4
+scipy==1.14.1
+
+# Visualization (server-side)
+matplotlib==3.9.2
+plotly==5.24.1
+
+# Utilities
+joblib==1.4.2
+tqdm==4.66.5
+httpx==0.27.2
+
+# Computer Vision & Report Generation Extensions
+opencv-python-headless==5.0.0.93
+reportlab==5.0.0
+python-multipart==0.0.32
+
+# Testing
+pytest==8.3.3
+pytest-asyncio==0.24.0

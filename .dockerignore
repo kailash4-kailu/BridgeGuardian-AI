@@ -1,0 +1,39 @@
+# Version Control
+.git
+.gitignore
+.dockerignore
+
+# Python dependencies, cache, and tests
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node dependencies and builds
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+
+# SQLite databases & application logs
+*.db
+*.db-shm
+*.db-wal
+logs/
+*.log
+runtime_logs/
+
+# IDE configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

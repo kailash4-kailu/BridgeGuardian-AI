@@ -1,0 +1,20 @@
+app:
+  name: "BridgeGuardian AI"
+  version: "1.0.0"
+  description: "Explainable Predictive Maintenance for Bridge SHM"
+  debug: true
+  log_level: "INFO"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+  workers: 1
+
+database:
+  url: "sqlite:///./bridgeguardian.db"
+  echo: false
+
+dataset:
+  path: "dataset/bridge dataset.csv"
+  timestamp_col: "Timestamp"

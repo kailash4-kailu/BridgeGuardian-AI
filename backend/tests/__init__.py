@@ -1,0 +1,1 @@
+"""BridgeGuardian AI — pytest configuration."""
