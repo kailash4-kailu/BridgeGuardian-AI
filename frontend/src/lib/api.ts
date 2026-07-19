@@ -12,21 +12,38 @@
  * - Local Development:       VITE_API_BASE_URL is empty → Vite proxy handles /api
  *
  * Usage:
- *   import { apiUrl } from '../lib/api'
- *   fetch(apiUrl('/api/v1/health'))
+ *   import { apiUrl, API_BASE, getStaticUrl } from '../lib/api'
  */
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+
+export const API_BASE = VITE_API_BASE_URL
+  ? `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
+  : '/api/v1'
 
 /**
  * Returns a fully-qualified URL for the given API path.
  * @param path - API path starting with '/' e.g. '/api/v1/health'
  */
 export function apiUrl(path: string): string {
-  // Trim trailing slash from base, ensure path starts with /
-  const base = API_BASE.replace(/\/$/, '')
+  const cleanPath = path.startsWith('/api/v1') ? path.substring(7) : path
+  const normalizedPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`
+  return `${API_BASE}${normalizedPath}`
+}
+
+/**
+ * Returns a fully-qualified URL for a static file/resource.
+ * @param path - Static path starting with '/' (e.g., '/static/uploads/file.png')
+ */
+export function getStaticUrl(path: string): string {
+  if (!path) return ''
+  if (path.startsWith('data:') || path.startsWith('blob:') || path.startsWith('http:') || path.startsWith('https:')) {
+    return path
+  }
+  const base = VITE_API_BASE_URL.replace(/\/$/, '')
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${base}${normalizedPath}`
 }
 
 export default apiUrl
+

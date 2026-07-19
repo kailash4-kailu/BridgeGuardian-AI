@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import DroneInspection from './components/DroneInspection'
+import { API_BASE, getStaticUrl } from './lib/api'
 
 type SensorPayload = Record<string, number | string | null>
 
@@ -108,8 +109,6 @@ type SensorField = {
 type FieldGroup = 'structure' | 'environment' | 'load' | 'diagnostics'
 
 type ApiState = 'checking' | 'online' | 'degraded' | 'offline'
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/$/, '')
 
 const DEFAULT_INPUT: SensorPayload = {
   Strain_microstrain: 734.5,
@@ -413,7 +412,7 @@ function App() {
       const data = await response.json() as any[]
       if (data && data.length > 0) {
         setVisionImageId(data[0].image_id)
-        setVisionImageUrl(data[0].url)
+        setVisionImageUrl(getStaticUrl(data[0].url))
         setVisionFilename(data[0].filename)
         setActiveOverlay('original')
       }
