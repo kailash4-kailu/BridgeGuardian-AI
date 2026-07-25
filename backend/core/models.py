@@ -208,3 +208,73 @@ class UserSession(Base):
     def __repr__(self) -> str:
         return f"<UserSession user_id={self.user_id} jti={self.token_jti} revoked={self.is_revoked}>"
 
+
+class InspectionCampaignRecord(Base):
+    """Industrial Drone Inspection Campaign tracking table."""
+
+    __tablename__ = "inspection_campaigns"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    campaign_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    bridge_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="IN_PROGRESS")
+    total_images: Mapped[int] = mapped_column(Integer, default=0)
+    processed_images: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class DroneImageRecord(Base):
+    """Drone Aerial Image Metadata and Quality Metrics table."""
+
+    __tablename__ = "drone_images"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    campaign_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    file_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    width: Mapped[int] = mapped_column(Integer, nullable=False)
+    height: Mapped[int] = mapped_column(Integer, nullable=False)
+    laplacian_variance: Mapped[float] = mapped_column(Float, nullable=False)
+    is_blurred: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class DefectDetectionRecord(Base):
+    """Defect Segmentation and Bounding Box Detection Record table."""
+
+    __tablename__ = "defect_detections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    campaign_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    image_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    component_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    defect_class: Mapped[str] = mapped_column(String(100), nullable=False)
+    severity_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    bbox_json: Mapped[str] = mapped_column(Text, nullable=False)
+    polygon_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+
+class ComponentHealthRecord(Base):
+    """Bridge Component Structural Health Index Summary table."""
+
+    __tablename__ = "component_health_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    evaluated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    campaign_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    component_code: Mapped[str] = mapped_column(String(50), nullable=False)
+    health_score: Mapped[float] = mapped_column(Float, nullable=False)
+    status_category: Mapped[str] = mapped_column(String(50), nullable=False)
+    worst_defect_class: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+
