@@ -88,18 +88,49 @@ def create_app() -> FastAPI:
     config = get_config()
     app_cfg = config.get("app", {})
 
+    tags_metadata = [
+        {"name": "System", "description": "Operational health check, readiness, and liveness probes."},
+        {"name": "Authentication", "description": "User registration, OAuth2 JWT token login, and profile extraction."},
+        {"name": "Prediction", "description": "Tabular sensor health predictions, failure probabilities, and RUL estimations."},
+        {"name": "Explainability", "description": "SHAP feature contribution attributions."},
+        {"name": "Computer Vision", "description": "Drone imagery defect segmentation and defect measurement."},
+        {"name": "Inspection Campaigns", "description": "Batch drone campaign processing and ReportLab PDF compilation."},
+        {"name": "ML Governance", "description": "Kolmogorov-Smirnov statistical data drift monitoring."},
+    ]
+
     app = FastAPI(
-        title=app_cfg.get("name", "BridgeGuardian AI"),
-        description=app_cfg.get("description", "Explainable Predictive Maintenance for Bridge SHM"),
+        title=app_cfg.get("name", "BridgeGuardian AI — Structural Health Platform"),
+        description="Enterprise Predictive Maintenance & Explainable Structural Health Monitoring API",
         version=app_cfg.get("version", "1.0.0"),
+        terms_of_service="https://bridge-guardian-ai.vercel.app/terms",
+        contact={
+            "name": "BridgeGuardian Infrastructure Engineering",
+            "url": "https://bridge-guardian-ai.vercel.app",
+            "email": "support@bridgeguardian.ai",
+        },
+        license_info={"name": "MIT License"},
+        openapi_tags=tags_metadata,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
+    # ── Exception Handlers ──────────────────────────────────────────────── #
+    from backend.app.core.exceptions import BridgeGuardianException, rfc7807_exception_handler
+    app.add_exception_handler(BridgeGuardianException, rfc7807_exception_handler)
+
     # ── Upload Limit Middleware ─────────────────────────────────────────── #
     app.add_middleware(LimitUploadSizeMiddleware, max_upload_size=settings.max_upload_size)
+
+    # ── Security Headers & Resilience Middlewares ───────────────────────── #
+    from backend.app.middleware.security_headers import SecurityHeadersMiddleware
+    from backend.app.middleware.idempotency import IdempotencyMiddleware
+    from backend.app.core.telemetry import MetricsMiddleware
+
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(IdempotencyMiddleware)
+    app.add_middleware(MetricsMiddleware)
 
     # ── CORS ────────────────────────────────────────────────────────────── #
     app.add_middleware(

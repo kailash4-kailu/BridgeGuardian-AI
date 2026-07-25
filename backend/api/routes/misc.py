@@ -56,6 +56,50 @@ async def health_check(
     )
 
 
+@router.get(
+    "/health/liveness",
+    summary="Kubernetes / Cloud Liveness Probe",
+    tags=["System"],
+)
+async def liveness_probe():
+    """Returns HTTP 200 OK if server process is running."""
+    return {"status": "alive", "timestamp": datetime.utcnow().isoformat()}
+
+
+@router.get(
+    "/health/readiness",
+    summary="Kubernetes / Cloud Readiness Probe",
+    tags=["System"],
+)
+async def readiness_probe(
+    db: Session = Depends(get_db),
+    pipeline=Depends(get_pipeline),
+):
+    """Returns HTTP 200 OK if database is connected and models are warmed in RAM."""
+    db_ok = True
+    try:
+        db.execute(__import__("sqlalchemy").text("SELECT 1"))
+    except Exception:
+        db_ok = False
+
+    if not db_ok or not pipeline.is_ready:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "not_ready",
+                "database_ok": db_ok,
+                "model_ready": pipeline.is_ready,
+            },
+        )
+
+    return {
+        "status": "ready",
+        "database_ok": True,
+        "model_ready": True,
+    }
+
+
+
 # ─────────────────────────── /model-info ────────────────────────────────── #
 
 @router.get(

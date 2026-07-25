@@ -171,3 +171,40 @@ class InspectionDefect(Base):
 
     def __repr__(self) -> str:
         return f"<InspectionDefect {self.defect_id} type={self.defect_type} component={self.component}>"
+
+
+class User(Base):
+    """User account model for authentication and Role-Based Access Control (RBAC)."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(100), nullable=True)
+    role: Mapped[str] = mapped_column(String(50), default="field_inspector", nullable=False)
+    is_active: Mapped[int] = mapped_column(Integer, default=1)
+
+    def __repr__(self) -> str:
+        return f"<User id={self.id} email={self.email} role={self.role}>"
+
+
+class UserSession(Base):
+    """Active user session tracking and token revocation."""
+
+    __tablename__ = "user_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    token_jti: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    is_revoked: Mapped[int] = mapped_column(Integer, default=0)
+
+    def __repr__(self) -> str:
+        return f"<UserSession user_id={self.user_id} jti={self.token_jti} revoked={self.is_revoked}>"
+

@@ -60,3 +60,5 @@ Thumbs.db
 .env.production
 .env.development
 .env.staging
+temp_env_312/
+

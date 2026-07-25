@@ -25,6 +25,17 @@ def get_pipeline():
     return inference_pipeline
 
 
+def get_prediction_service(db: Session = Depends(get_db)) -> PredictionService:
+    """Dependency injection helper for PredictionService."""
+    from backend.app.infrastructure.db.repositories.sqlalchemy_prediction_repository import (
+        SQLAlchemyPredictionRepository,
+    )
+    from backend.app.services.prediction_service import PredictionService
+
+    repo = SQLAlchemyPredictionRepository(db)
+    return PredictionService(repository=repo)
+
+
 @router.post(
     "/predict",
     response_model=PredictionResponse,
@@ -34,7 +45,7 @@ def get_pipeline():
 )
 async def predict(
     sensor_input: BridgeSensorInput,
-    db: Session = Depends(get_db),
+    service: PredictionService = Depends(get_prediction_service),
     pipeline=Depends(get_pipeline),
 ) -> PredictionResponse:
     """
@@ -57,29 +68,13 @@ async def predict(
     input_dict = {k: (v if v is not None else _get_default(k)) for k, v in input_dict.items()}
 
     try:
-        result = pipeline.predict(input_dict)
+        result = await service.execute_prediction(input_dict, pipeline_instance=pipeline)
     except Exception as e:
         logger.error(f"Prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
-    # Persist to database
-    record = PredictionRecord(
-        input_data=json.dumps({k: v for k, v in input_dict.items() if not isinstance(v, float) or v == v}),
-        health_score=result["health_score_raw"],
-        failure_probability=result["failure_probability_raw"],
-        rul_days=result["rul_days"],
-        risk_category=result["risk_category"],
-        maintenance_priority=result["maintenance_priority"],
-        maintenance_recommendation=result["maintenance_recommendation"],
-        prediction_confidence=result["prediction_confidence"],
-        model_version=result["model_version"],
-    )
-    db.add(record)
-    db.commit()
-    db.refresh(record)
-
     return PredictionResponse(
-        prediction_id=record.id,
+        prediction_id=result.get("id"),
         **result,
     )
 
