@@ -35,19 +35,19 @@ from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit
 try:
     import xgboost as xgb
     XGB_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     XGB_AVAILABLE = False
 
 try:
     import lightgbm as lgb
     LGB_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     LGB_AVAILABLE = False
 
 try:
     from catboost import CatBoostClassifier, CatBoostRegressor
     CB_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     CB_AVAILABLE = False
 
 logger = logging.getLogger("bridgeguardian.model_trainer")

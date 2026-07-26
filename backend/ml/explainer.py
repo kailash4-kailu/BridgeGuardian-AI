@@ -15,9 +15,10 @@ logger = logging.getLogger("bridgeguardian.explainer")
 try:
     import shap
     SHAP_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception) as e:
     SHAP_AVAILABLE = False
-    logger.warning("SHAP not available — explainability features disabled")
+    logger.warning(f"SHAP not available ({e}) — explainability will use statistical feature attribution fallback")
+
 
 
 class Explainer:

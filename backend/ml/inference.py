@@ -125,7 +125,10 @@ class InferencePipeline:
             for key in self._models:
                 expl_path = self.models_dir / f"explainer_{key}.joblib"
                 if expl_path.exists():
-                    self._explainers[key] = joblib.load(expl_path)
+                    try:
+                        self._explainers[key] = joblib.load(expl_path)
+                    except Exception as e:
+                        logger.warning(f"Could not load explainer for {key} ({e}) — using fallback explainability")
 
             # Load feature columns
             cols_path = self.models_dir / "feature_columns.json"

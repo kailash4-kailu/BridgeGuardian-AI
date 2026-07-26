@@ -25,17 +25,6 @@ def get_pipeline():
     return inference_pipeline
 
 
-def get_prediction_service(db: Session = Depends(get_db)) -> PredictionService:
-    """Dependency injection helper for PredictionService."""
-    from backend.app.infrastructure.db.repositories.sqlalchemy_prediction_repository import (
-        SQLAlchemyPredictionRepository,
-    )
-    from backend.app.services.prediction_service import PredictionService
-
-    repo = SQLAlchemyPredictionRepository(db)
-    return PredictionService(repository=repo)
-
-
 @router.post(
     "/predict",
     response_model=PredictionResponse,
@@ -45,8 +34,8 @@ def get_prediction_service(db: Session = Depends(get_db)) -> PredictionService:
 )
 async def predict(
     sensor_input: BridgeSensorInput,
-    service: PredictionService = Depends(get_prediction_service),
     pipeline=Depends(get_pipeline),
+    db: Session = Depends(get_db),
 ) -> PredictionResponse:
     """
     Accepts bridge sensor readings and returns:
@@ -68,10 +57,31 @@ async def predict(
     input_dict = {k: (v if v is not None else _get_default(k)) for k, v in input_dict.items()}
 
     try:
-        result = await service.execute_prediction(input_dict, pipeline_instance=pipeline)
+        result = pipeline.predict(input_dict)
     except Exception as e:
         logger.error(f"Prediction failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+    # Persist record to DB
+    try:
+        record = PredictionRecord(
+            input_data=json.dumps(input_dict),
+            health_score=result.get("health_score"),
+            failure_probability=result.get("failure_probability"),
+            rul_days=result.get("rul_days"),
+            risk_category=result.get("risk_category"),
+            maintenance_priority=result.get("maintenance_priority"),
+            maintenance_recommendation=result.get("maintenance_recommendation"),
+            prediction_confidence=result.get("prediction_confidence"),
+            model_version=result.get("model_version"),
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+        result["id"] = record.id
+    except Exception as db_err:
+        logger.warning(f"Could not persist prediction record to DB: {db_err}")
+        db.rollback()
 
     return PredictionResponse(
         prediction_id=result.get("id"),

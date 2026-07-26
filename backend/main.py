@@ -1,6 +1,6 @@
 """
 BridgeGuardian AI — FastAPI Application Entry Point
-Production-grade API with CORS, lifespan management, and structured logging.
+Production-grade enterprise API with CORS, lifespan management, Prometheus metrics, and structured logging.
 """
 from __future__ import annotations
 
@@ -30,10 +30,9 @@ inference_pipeline = InferencePipeline(models_dir=settings.models_dir)
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle."""
     logger.info("=" * 60)
-    logger.info("  BridgeGuardian AI - Starting up")
+    logger.info("  BridgeGuardian AI — Enterprise Platform Startup")
     logger.info("=" * 60)
 
-    # Ensure all configurable directories exist
     for directory in [
         settings.upload_dir,
         settings.processed_dir,
@@ -42,29 +41,24 @@ async def lifespan(app: FastAPI):
         settings.models_dir,
     ]:
         Path(directory).mkdir(parents=True, exist_ok=True)
-    logger.info("Configured directories ensured on startup.")
+    logger.info("Configured storage directories verified.")
 
-    # Initialise database tables
     init_db()
-    logger.info("Database initialised OK")
 
-    # Try to load pre-trained models (may not exist on first run)
     try:
         inference_pipeline.load()
         logger.info(f"Inference pipeline loaded OK (version: {inference_pipeline._model_version})")
     except FileNotFoundError:
-        logger.warning(
-            "No trained models found. POST /train to train models before predicting."
-        )
+        logger.warning("No trained models found. Trigger POST /api/v1/train to initialize pipeline.")
     except Exception as e:
-        logger.error(f"Failed to load pipeline: {e}")
+        logger.error(f"Failed to load inference pipeline: {e}")
 
     yield
 
-    logger.info("BridgeGuardian AI - Shutting down gracefully")
+    logger.info("BridgeGuardian AI — Shutting down gracefully")
 
 
-# ── Limit Upload Size Middleware ────────────────────────────────────────── #
+# ── Upload Limit Middleware ─────────────────────────────────────────── #
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class LimitUploadSizeMiddleware(BaseHTTPMiddleware):
@@ -78,29 +72,31 @@ class LimitUploadSizeMiddleware(BaseHTTPMiddleware):
             if content_length and int(content_length) > self.max_upload_size:
                 return JSONResponse(
                     status_code=413,
-                    content={"detail": f"Request entity too large. Max size is {self.max_upload_size} bytes."}
+                    content={"detail": f"Request entity too large. Max allowed is {self.max_upload_size} bytes."}
                 )
         return await call_next(request)
 
 
-# ── FastAPI Application ────────────────────────────────────────────────── #
+# ── FastAPI Application Builder ───────────────────────────────────────── #
 def create_app() -> FastAPI:
     config = get_config()
     app_cfg = config.get("app", {})
 
     tags_metadata = [
-        {"name": "System", "description": "Operational health check, readiness, and liveness probes."},
-        {"name": "Authentication", "description": "User registration, OAuth2 JWT token login, and profile extraction."},
+        {"name": "System", "description": "Operational health check, readiness, liveness probes, and Prometheus metrics."},
+        {"name": "Authentication", "description": "User registration, OAuth2 JWT token login, refresh, logout, and profile extraction."},
+        {"name": "Model Registry", "description": "Production model tracking, accuracy metrics, and version rollbacks."},
         {"name": "Prediction", "description": "Tabular sensor health predictions, failure probabilities, and RUL estimations."},
         {"name": "Explainability", "description": "SHAP feature contribution attributions."},
-        {"name": "Computer Vision", "description": "Drone imagery defect segmentation and defect measurement."},
+        {"name": "Computer Vision", "description": "Drone imagery defect segmentation and morphological defect measurement."},
         {"name": "Inspection Campaigns", "description": "Batch drone campaign processing and ReportLab PDF compilation."},
         {"name": "ML Governance", "description": "Kolmogorov-Smirnov statistical data drift monitoring."},
+        {"name": "Real-Time Streaming", "description": "WebSocket live multi-stage inspection progress streams."},
     ]
 
     app = FastAPI(
         title=app_cfg.get("name", "BridgeGuardian AI — Structural Health Platform"),
-        description="Enterprise Predictive Maintenance & Explainable Structural Health Monitoring API",
+        description="Enterprise Predictive Maintenance & Explainable Structural Health Monitoring Platform API",
         version=app_cfg.get("version", "1.0.0"),
         terms_of_service="https://bridge-guardian-ai.vercel.app/terms",
         contact={
@@ -116,23 +112,19 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ── Exception Handlers ──────────────────────────────────────────────── #
-    from backend.app.core.exceptions import BridgeGuardianException, rfc7807_exception_handler
-    app.add_exception_handler(BridgeGuardianException, rfc7807_exception_handler)
-
-    # ── Upload Limit Middleware ─────────────────────────────────────────── #
-    app.add_middleware(LimitUploadSizeMiddleware, max_upload_size=settings.max_upload_size)
-
-    # ── Security Headers & Resilience Middlewares ───────────────────────── #
+    # Exceptions & Middlewares
     from backend.app.middleware.security_headers import SecurityHeadersMiddleware
-    from backend.app.middleware.idempotency import IdempotencyMiddleware
-    from backend.app.core.telemetry import MetricsMiddleware
+    from backend.app.middleware.request_tracing import RequestTracingMiddleware
+    from backend.app.middleware.rate_limiter import RateLimiterMiddleware
+    from backend.app.core.telemetry import MetricsMiddleware, get_prometheus_metrics_raw
 
+    app.add_middleware(LimitUploadSizeMiddleware, max_upload_size=settings.max_upload_size)
     app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(IdempotencyMiddleware)
+    app.add_middleware(RequestTracingMiddleware)
+    app.add_middleware(RateLimiterMiddleware, max_requests=settings.rate_limit_per_minute)
     app.add_middleware(MetricsMiddleware)
 
-    # ── CORS ────────────────────────────────────────────────────────────── #
+    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
@@ -141,18 +133,21 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # ── Routes ──────────────────────────────────────────────────────────── #
+    # Router
     app.include_router(api_router, prefix="/api/v1")
 
-    # ── Static Files ────────────────────────────────────────────────────── #
+    # Static Assets
     from fastapi.staticfiles import StaticFiles
-    # Map the general static folder (or settings.upload_dir/etc.)
-    # We mount "backend/static" so frontend can query images and pdfs using standard paths
     static_dir = Path("backend/static")
     static_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
-    # ── Root ────────────────────────────────────────────────────────────── #
+    # Prometheus Metrics & System Endpoints
+    @app.get("/metrics", tags=["System"])
+    async def metrics():
+        """Expose raw Prometheus telemetry metrics."""
+        return get_prometheus_metrics_raw()
+
     @app.get("/", tags=["System"])
     async def root():
         return {
@@ -161,9 +156,10 @@ def create_app() -> FastAPI:
             "status": "running",
             "docs": "/docs",
             "health": "/api/v1/health",
+            "metrics": "/metrics",
         }
 
-    # ── Global exception handler ────────────────────────────────────────── #
+    # Global Exception Handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request, exc):
         logger.error(f"Unhandled exception: {exc}", exc_info=True)
@@ -174,7 +170,6 @@ def create_app() -> FastAPI:
         )
 
     return app
-
 
 
 app = create_app()

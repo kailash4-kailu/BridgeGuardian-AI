@@ -278,3 +278,28 @@ class ComponentHealthRecord(Base):
     worst_defect_class: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
 
+class ModelRegistryEntry(Base):
+    """Production Model Registry tracking version, accuracy metrics, dataset version, and deployment status."""
+
+    __tablename__ = "model_registry"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    model_version: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    model_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    algorithm: Mapped[str] = mapped_column(String(100), nullable=False)
+    accuracy_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    rmse_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    dataset_version: Mapped[str] = mapped_column(String(50), nullable=False, default="v1.0")
+    training_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    deployment_status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")  # active, archived, rolled_back
+    is_active: Mapped[int] = mapped_column(Integer, default=1)
+    metrics_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<ModelRegistryEntry version={self.model_version} status={self.deployment_status}>"
+
+
+
