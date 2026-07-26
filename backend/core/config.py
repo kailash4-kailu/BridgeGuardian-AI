@@ -61,8 +61,8 @@ class Settings(BaseSettings):
 
     # CORS & Performance
     cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000,https://bridge-guardian-ai.vercel.app,*"
-    max_file_size: int = 10485760   # 10 MB per single image
-    max_upload_size: int = 104857600  # 100 MB total batch upload payload
+    max_file_size: int = 20971520   # 20 MB per single image
+    max_upload_size: int = 524288000  # 500 MB total batch upload payload
     host: str = "0.0.0.0"
     port: int = 8000
     demo_mode: bool = True

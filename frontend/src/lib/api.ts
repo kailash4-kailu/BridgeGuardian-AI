@@ -15,11 +15,9 @@
  *   import { apiUrl, API_BASE, getStaticUrl } from '../lib/api'
  */
 
-const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://127.0.0.1:8000'
 
-export const API_BASE = VITE_API_BASE_URL
-  ? `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
-  : '/api/v1'
+export const API_BASE = `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
 
 /**
  * Returns a fully-qualified URL for the given API path.

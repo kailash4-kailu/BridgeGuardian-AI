@@ -62,9 +62,9 @@ async def lifespan(app: FastAPI):
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class LimitUploadSizeMiddleware:
-    def __init__(self, app, max_upload_size: int):
+    def __init__(self, app, max_upload_size: int = 524288000):
         self.app = app
-        self.max_upload_size = max_upload_size
+        self.max_upload_size = max(max_upload_size, 524288000)
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http" and scope.get("method") == "POST":
@@ -126,7 +126,7 @@ def create_app() -> FastAPI:
     from backend.app.middleware.rate_limiter import RateLimiterMiddleware
     from backend.app.core.telemetry import MetricsMiddleware, get_prometheus_metrics_raw
 
-    app.add_middleware(LimitUploadSizeMiddleware, max_upload_size=settings.max_upload_size)
+    app.add_middleware(LimitUploadSizeMiddleware, max_upload_size=get_settings().max_upload_size)
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RequestTracingMiddleware)
     app.add_middleware(RateLimiterMiddleware, max_requests=settings.rate_limit_per_minute)
