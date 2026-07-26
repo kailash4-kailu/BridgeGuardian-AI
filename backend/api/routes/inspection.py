@@ -135,13 +135,25 @@ async def run_inspection(
         db.commit()
         db.refresh(record)
 
-        pipeline = CampaignInspectionPipeline()
+        def _run_bg_task(rec_id: int, paths: List[str], p_to_mm: float):
+            from backend.core.database import SessionLocal
+            bg_db = SessionLocal()
+            try:
+                pipeline = CampaignInspectionPipeline()
+                pipeline.run_campaign(
+                    db=bg_db,
+                    inspection_id=rec_id,
+                    image_paths=paths,
+                    pixel_to_mm=p_to_mm
+                )
+            finally:
+                bg_db.close()
+
         background_tasks.add_task(
-            pipeline.run_campaign,
-            db=db,
-            record_id=record.id,
-            image_paths=request.image_paths,
-            pixel_to_mm=request.pixel_to_mm
+            _run_bg_task,
+            rec_id=record.id,
+            paths=request.image_paths,
+            p_to_mm=request.pixel_to_mm
         )
 
         return {
