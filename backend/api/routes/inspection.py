@@ -3,21 +3,23 @@ BridgeGuardian AI — Campaign Inspection API Endpoints
 Provides routes for batch upload, run-inspection queue, polling status, and downloading reports.
 """
 from __future__ import annotations
+
 import shutil
 import json
+import logging
 from pathlib import Path
 from typing import List, Dict, Any
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks, HTTPException, status
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from backend.core.database import get_db
 from backend.core.models import InspectionRecord
 from backend.ml.computer_vision.inspection_pipeline import CampaignInspectionPipeline
-
 from backend.core.config import get_settings
 
+logger = logging.getLogger("bridgeguardian.inspection")
 settings = get_settings()
 
 router = APIRouter(prefix="/inspection", tags=["Drone Inspection"])
@@ -32,38 +34,70 @@ class RunInspectionRequest(BaseModel):
 @router.post("/upload-images")
 async def upload_images(files: List[UploadFile] = File(...)):
     """
-    Saves multiple uploaded drone images to the uploads directory.
-    Returns names and paths for processing.
+    Saves multiple uploaded drone images to the static uploads directory.
+    Validates file formats, sizes, and returns structured metadata.
     """
-    upload_dir = Path(settings.upload_dir)
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        upload_dir = Path(settings.upload_dir)
+        upload_dir.mkdir(parents=True, exist_ok=True)
 
-    
-    uploaded_files = []
-    for file in files:
-        # Check support formats
-        suffix = Path(file.filename).suffix.lower()
-        if suffix not in (".jpg", ".jpeg", ".png"):
+        if not files:
             raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file format '{suffix}'. Allowed formats: jpg, jpeg, png."
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No files provided in request."
             )
-            
-        dest_path = upload_dir / file.filename
-        
-        # Save to disk
-        try:
-            with open(dest_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to save file '{file.filename}': {str(e)}")
-            
-        uploaded_files.append({
-            "filename": file.filename,
-            "filepath": str(dest_path.resolve())
-        })
-        
-    return uploaded_files
+
+        uploaded_files = []
+        for file in files:
+            filename = file.filename or f"uploaded_image_{len(uploaded_files)+1}.jpg"
+            suffix = Path(filename).suffix.lower()
+
+            if suffix not in (".jpg", ".jpeg", ".png", ".webp"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported file format '{suffix}' for '{filename}'. Allowed: jpg, jpeg, png, webp."
+                )
+
+            dest_path = upload_dir / filename
+
+            try:
+                content = await file.read()
+                if len(content) > settings.max_file_size:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"File '{filename}' exceeds maximum allowed size of {settings.max_file_size} bytes."
+                    )
+
+                with open(dest_path, "wb") as buffer:
+                    buffer.write(content)
+
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.error(f"Failed to write uploaded file '{filename}': {exc}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to save file '{filename}': {str(exc)}"
+                )
+
+            uploaded_files.append({
+                "filename": filename,
+                "filepath": str(dest_path.resolve()),
+                "url": f"/static/uploads/{filename}"
+            })
+
+        logger.info(f"Successfully processed batch upload of {len(uploaded_files)} images.")
+        return uploaded_files
+
+    except HTTPException as http_exc:
+        logger.warning(f"Upload-images validation warning: {http_exc.detail}")
+        raise http_exc
+    except Exception as exc:
+        logger.error(f"Unhandled exception in /upload-images: {exc}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": f"Server upload error: {str(exc)}"}
+        )
 
 
 @router.post("/run-inspection")
@@ -73,125 +107,107 @@ async def run_inspection(
     db: Session = Depends(get_db)
 ):
     """
-    Initiates a new multi-image inspection campaign and schedules the background task.
+    Initiates a new multi-image inspection campaign and schedules the background process.
     """
-    if not request.image_paths:
-        raise HTTPException(status_code=400, detail="No image paths provided for inspection.")
-        
-    # Verify image paths exist
-    for p in request.image_paths:
-        if not Path(p).exists():
-            raise HTTPException(status_code=400, detail=f"Image path does not exist: {p}")
-            
-    # Create DB record
-    record = InspectionRecord(
-        status="queued",
-        progress=0.0,
-        images_json=json.dumps([Path(p).name for p in request.image_paths])
-    )
-    db.add(record)
-    db.commit()
-    db.refresh(record)
-    
-    # Schedule background process
-    pipeline = CampaignInspectionPipeline()
-    background_tasks.add_task(
-        pipeline.run_campaign,
-        db=db,
-        inspection_id=record.id,
-        image_paths=request.image_paths,
-        pixel_to_mm=request.pixel_to_mm
-    )
-    
-    return {
+    try:
+        if not request.image_paths:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No image paths provided for inspection.")
+
+        for p in request.image_paths:
+            if not Path(p).exists():
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Image path does not exist: {p}")
+
+        record = InspectionRecord(
+            status="queued",
+            progress=0.0,
+            images_json=json.dumps([Path(p).name for p in request.image_paths])
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+
+        pipeline = CampaignInspectionPipeline()
+        background_tasks.add_task(
+            pipeline.run_campaign,
+            db=db,
+            record_id=record.id,
+            image_paths=request.image_paths,
+            pixel_to_mm=request.pixel_to_mm
+        )
+
+        return {
+            "message": "Inspection campaign initiated successfully.",
+            "record_id": record.id,
+            "inspection_id": record.id,
+            "id": record.id,
+            "status": "queued"
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Error in /run-inspection: {exc}", exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": f"Failed to initiate inspection: {str(exc)}"}
+        )
+
+
+@router.get("/{record_id}")
+async def get_inspection_status(record_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieves the execution status, progress, and computed metrics for an inspection campaign.
+    """
+    record = db.query(InspectionRecord).filter(InspectionRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inspection record #{record_id} not found.")
+
+    res = {
+        "id": record.id,
+        "record_id": record.id,
         "inspection_id": record.id,
         "status": record.status,
         "progress": record.progress,
-        "created_at": record.created_at.isoformat()
-    }
-
-
-@router.get("/{id}")
-async def get_inspection_details(id: int, db: Session = Depends(get_db)):
-    """
-    Fetches the details and processing progress of a given inspection campaign.
-    """
-    record = db.query(InspectionRecord).filter(InspectionRecord.id == id).first()
-    if not record:
-        raise HTTPException(status_code=404, detail="Inspection campaign record not found.")
-        
-    # Helper to safely load JSON
-    def safe_json_load(data):
-        if not data:
-            return None
-        try:
-            return json.loads(data)
-        except Exception:
-            return None
-
-    # Load performance metrics and model metadata
-    perf_metrics = safe_json_load(record.performance_metrics_json)
-    model_metadata = safe_json_load(record.model_metadata_json)
-    agg_stats = safe_json_load(record.aggregate_results_json)
-    image_results = safe_json_load(record.image_results_json)
-    
-    # Vision level and general explanations
-    explainability = None
-    if record.status == "completed" and record.summary_report:
-        # Reconstruct structured explainability from summary and aggregate stats
-        explainability = {
-            "summary_report": record.summary_report,
-            "vision_explanation": f"Identified visual defects located across components.",
-            "feature_explanation": [
-                f"Max Crack Width: {agg_stats.get('largest_crack_width', 0.0)} mm" if agg_stats else "",
-                f"Rust Coverage: {agg_stats.get('rust_coverage_percent', 0.0)}%" if agg_stats else ""
-            ],
-            "ml_contributions": [
-                f"Adjusted Health Score: {record.health_score}%",
-                f"Calculated Failure Probability: {record.failure_probability}%"
-            ]
-        }
-
-    return {
-        "id": record.id,
-        "created_at": record.created_at.isoformat(),
-        "status": record.status,
-        "progress": record.progress,
+        "created_at": record.created_at.isoformat() if record.created_at else None,
+        "pdf_report_path": record.pdf_report_path,
         "health_score": record.health_score,
         "failure_probability": record.failure_probability,
         "rul_days": record.rul_days,
         "risk_category": record.risk_category,
         "maintenance_priority": record.maintenance_priority,
-        "maintenance_action": record.maintenance_action,
-        "repair_window_days": record.repair_window_days,
-        "inspection_interval_days": record.inspection_interval_days,
         "summary_report": record.summary_report,
-        "explainability": explainability,
-        "aggregate_results": agg_stats,
-        "image_results": image_results,
-        "performance_metrics": perf_metrics,
-        "model_metadata": model_metadata
     }
 
+    if record.aggregate_results_json:
+        try:
+            res["aggregate_results"] = json.loads(record.aggregate_results_json)
+        except Exception:
+            pass
 
-@router.get("/report/{id}")
-async def download_report_pdf(id: int, db: Session = Depends(get_db)):
+    return res
+
+
+@router.get("/report/{record_id}")
+async def download_inspection_report(record_id: int, db: Session = Depends(get_db)):
     """
-    Downloads the compiled PDF report for a completed inspection campaign.
+    Downloads the compiled PDF inspection report.
     """
-    record = db.query(InspectionRecord).filter(InspectionRecord.id == id).first()
+    record = db.query(InspectionRecord).filter(InspectionRecord.id == record_id).first()
     if not record:
-        raise HTTPException(status_code=404, detail="Inspection campaign record not found.")
-        
-    if record.status != "completed":
-        raise HTTPException(status_code=400, detail=f"PDF report not ready. Current status: {record.status}.")
-        
-    pdf_path = Path(record.pdf_report_path) if record.pdf_report_path else None
-    if not pdf_path or not pdf_path.exists():
-        raise HTTPException(status_code=404, detail="Compiled PDF report file not found on disk.")
-        
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inspection record #{record_id} not found.")
+
+    pdf_path = record.pdf_report_path
+    if not pdf_path:
+        reports_dir = Path("backend/static/reports")
+        candidate = reports_dir / f"inspection_report_{record_id}.pdf"
+        if candidate.exists():
+            pdf_path = str(candidate)
+
+    if not pdf_path or not Path(pdf_path.lstrip("/")).exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"PDF report for record #{record_id} not yet generated.")
+
+    clean_path = pdf_path.lstrip("/") if pdf_path.startswith("/") else pdf_path
     return FileResponse(
-        str(pdf_path),
+        path=clean_path,
         media_type="application/pdf",
-        filename=pdf_path.name
+        filename=f"inspection_report_{record_id}.pdf"
     )

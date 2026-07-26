@@ -83,11 +83,11 @@ async def upload_image(files: List[UploadFile] = File(...)) -> List[UploadRespon
         
         try:
             content = await file.read()
-            # Double check size limits
-            if len(content) > settings.max_upload_size:
+            # Double check per-file size limits
+            if len(content) > settings.max_file_size:
                 raise HTTPException(
                     status_code=413, 
-                    detail=f"File {file.filename} exceeds maximum size of {settings.max_upload_size} bytes."
+                    detail=f"File {file.filename} exceeds maximum size of {settings.max_file_size} bytes."
                 )
                 
             save_path.write_bytes(content)

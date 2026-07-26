@@ -26,8 +26,8 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self.window_seconds = window_seconds
 
     async def dispatch(self, request: Request, call_next):
-        # Exclude metrics and static files from rate limiting
-        if request.url.path in ["/metrics", "/health", "/docs", "/openapi.json"] or request.url.path.startswith("/static/"):
+        # Exclude metrics, static files, and OPTIONS preflights from rate limiting
+        if request.method == "OPTIONS" or request.url.path in ["/metrics", "/health", "/docs", "/openapi.json"] or request.url.path.startswith("/static/"):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "127.0.0.1"

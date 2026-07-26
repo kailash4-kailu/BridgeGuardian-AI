@@ -67,6 +67,8 @@ class LimitUploadSizeMiddleware(BaseHTTPMiddleware):
         self.max_upload_size = max_upload_size
 
     async def dispatch(self, request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
         if request.method == "POST":
             content_length = request.headers.get("content-length")
             if content_length and int(content_length) > self.max_upload_size:
