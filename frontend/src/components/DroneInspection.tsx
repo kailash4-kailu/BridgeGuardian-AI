@@ -239,8 +239,14 @@ export default function DroneInspection() {
         body: formData,
       })
       if (!uploadRes.ok) {
-        const errDetail = await uploadRes.json()
-        throw new Error(errDetail.detail || 'Upload failed')
+        let detail = 'Upload failed'
+        try {
+          const errDetail = await uploadRes.json()
+          detail = errDetail.detail || errDetail.message || 'Upload failed'
+        } catch {
+          detail = `Upload failed with HTTP status ${uploadRes.status}`
+        }
+        throw new Error(detail)
       }
       
       const filesData = (await uploadRes.json()) as UploadedFile[]
