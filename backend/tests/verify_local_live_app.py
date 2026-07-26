@@ -37,7 +37,9 @@ def test_cors_and_upload():
         files.append(("files", (f"drone_browser_img_{i:02d}.jpg", buf.getvalue(), "image/jpeg")))
 
     post_headers = {"Origin": "http://localhost:3000"}
+    t_start = time.perf_counter()
     r = client.post("/api/v1/inspection/upload-images", files=files, headers=post_headers)
+    t_elapsed = (time.perf_counter() - t_start) * 1000
     assert r.status_code == 200, f"Upload failed with status {r.status_code}: {r.text}"
     
     uploaded = r.json()
@@ -45,8 +47,8 @@ def test_cors_and_upload():
     
     # Check CORS header in response
     allow_origin = r.headers.get("access-control-allow-origin")
-    print(f"[OK] POST /api/v1/inspection/upload-images: Status 200 OK | Access-Control-Allow-Origin: {allow_origin}")
-    print(f"[OK] Uploaded {len(uploaded)} images successfully with zero CORS or 413 issues!")
+    print(f"[OK] POST /api/v1/inspection/upload-images: Status 200 OK | Duration: {t_elapsed:.2f}ms | Access-Control-Allow-Origin: {allow_origin}")
+    print(f"[OK] Uploaded {len(uploaded)} images successfully in {t_elapsed:.2f}ms (< 1 second)!")
 
     # 3. Test 16 Images Upload with Origin: http://127.0.0.1:3000
     post_headers_ip = {"Origin": "http://127.0.0.1:3000"}

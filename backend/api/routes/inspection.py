@@ -1,11 +1,13 @@
 """
 BridgeGuardian AI — Campaign Inspection API Endpoints
 Provides routes for batch upload, run-inspection queue, polling status, and downloading reports.
+Includes step-by-step diagnostic logging for upload operations.
 """
 from __future__ import annotations
 
 import shutil
 import json
+import time
 import logging
 from pathlib import Path
 from typing import List, Dict, Any
@@ -25,7 +27,6 @@ settings = get_settings()
 router = APIRouter(prefix="/inspection", tags=["Drone Inspection"])
 
 
-# Request payload schemas
 class RunInspectionRequest(BaseModel):
     image_paths: List[str]
     pixel_to_mm: float = 0.5
@@ -35,50 +36,57 @@ class RunInspectionRequest(BaseModel):
 async def upload_images(files: List[UploadFile] = File(...)):
     """
     Saves multiple uploaded drone images to the static uploads directory.
-    Validates file formats, sizes, and returns structured metadata.
+    Validates file formats, sizes, and returns structured metadata immediately.
     """
+    t0 = time.perf_counter()
+    logger.info("[1] Request received for /upload-images")
+
     try:
         upload_dir = Path(settings.upload_dir)
         upload_dir.mkdir(parents=True, exist_ok=True)
 
-        if not files:
+        num_files = len(files) if files else 0
+        logger.info(f"[2] Multipart parsed: {num_files} files received")
+
+        if not files or num_files == 0:
+            logger.warning("[3] No files provided in request.")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No files provided in request."
             )
 
+        logger.info(f"[3] Validating {num_files} files...")
         uploaded_files = []
-        for file in files:
-            filename = file.filename or f"uploaded_image_{len(uploaded_files)+1}.jpg"
+
+        for i, file in enumerate(files, 1):
+            filename = file.filename or f"uploaded_image_{i}.jpg"
             suffix = Path(filename).suffix.lower()
 
             if suffix not in (".jpg", ".jpeg", ".png", ".webp"):
+                logger.warning(f"[Validation Failed] File {i} '{filename}' unsupported format '{suffix}'")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Unsupported file format '{suffix}' for '{filename}'. Allowed: jpg, jpeg, png, webp."
+                    detail=f"Unsupported file format '{suffix}' for '{filename}'."
                 )
 
             dest_path = upload_dir / filename
 
-            try:
-                content = await file.read()
-                if len(content) > settings.max_file_size:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        detail=f"File '{filename}' exceeds maximum allowed size of {settings.max_file_size} bytes."
-                    )
+            logger.info(f"[4] Reading UploadFile {i}/{num_files}: {filename}")
+            content = await file.read()
 
-                with open(dest_path, "wb") as buffer:
-                    buffer.write(content)
-
-            except HTTPException:
-                raise
-            except Exception as exc:
-                logger.error(f"Failed to write uploaded file '{filename}': {exc}", exc_info=True)
+            file_size = len(content)
+            if file_size > settings.max_file_size:
+                logger.warning(f"[Size Check Failed] File {i} '{filename}' size {file_size} > {settings.max_file_size}")
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to save file '{filename}': {str(exc)}"
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File '{filename}' exceeds maximum allowed size of {settings.max_file_size} bytes."
                 )
+
+            # Fast synchronous file save
+            with open(dest_path, "wb") as buffer:
+                buffer.write(content)
+
+            logger.info(f"[5] Saved file {i}/{num_files}: {dest_path} ({file_size} bytes)")
 
             uploaded_files.append({
                 "filename": filename,
@@ -86,14 +94,15 @@ async def upload_images(files: List[UploadFile] = File(...)):
                 "url": f"/static/uploads/{filename}"
             })
 
-        logger.info(f"Successfully processed batch upload of {len(uploaded_files)} images.")
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        logger.info(f"[10] Returning HTTP response 200 OK for {num_files} images in {elapsed_ms:.2f}ms")
         return uploaded_files
 
     except HTTPException as http_exc:
-        logger.warning(f"Upload-images validation warning: {http_exc.detail}")
+        logger.warning(f"[Upload Exception] HTTP {http_exc.status_code}: {http_exc.detail}")
         raise http_exc
     except Exception as exc:
-        logger.error(f"Unhandled exception in /upload-images: {exc}", exc_info=True)
+        logger.error(f"[Upload Error] Unhandled exception in /upload-images: {exc}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": f"Server upload error: {str(exc)}"}
@@ -107,7 +116,7 @@ async def run_inspection(
     db: Session = Depends(get_db)
 ):
     """
-    Initiates a new multi-image inspection campaign and schedules the background process.
+    Initiates a new multi-image inspection campaign and schedules background execution.
     """
     try:
         if not request.image_paths:
@@ -155,7 +164,7 @@ async def run_inspection(
 @router.get("/{record_id}")
 async def get_inspection_status(record_id: int, db: Session = Depends(get_db)):
     """
-    Retrieves the execution status, progress, and computed metrics for an inspection campaign.
+    Retrieves execution status, progress, and computed metrics for an inspection campaign.
     """
     record = db.query(InspectionRecord).filter(InspectionRecord.id == record_id).first()
     if not record:
@@ -189,7 +198,7 @@ async def get_inspection_status(record_id: int, db: Session = Depends(get_db)):
 @router.get("/report/{record_id}")
 async def download_inspection_report(record_id: int, db: Session = Depends(get_db)):
     """
-    Downloads the compiled PDF inspection report.
+    Downloads compiled PDF inspection report.
     """
     record = db.query(InspectionRecord).filter(InspectionRecord.id == record_id).first()
     if not record:

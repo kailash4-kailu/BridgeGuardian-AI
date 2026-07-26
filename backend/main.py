@@ -61,22 +61,28 @@ async def lifespan(app: FastAPI):
 # ── Upload Limit Middleware ─────────────────────────────────────────── #
 from starlette.middleware.base import BaseHTTPMiddleware
 
-class LimitUploadSizeMiddleware(BaseHTTPMiddleware):
+class LimitUploadSizeMiddleware:
     def __init__(self, app, max_upload_size: int):
-        super().__init__(app)
+        self.app = app
         self.max_upload_size = max_upload_size
 
-    async def dispatch(self, request, call_next):
-        if request.method == "OPTIONS":
-            return await call_next(request)
-        if request.method == "POST":
-            content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > self.max_upload_size:
-                return JSONResponse(
-                    status_code=413,
-                    content={"detail": f"Request entity too large. Max allowed is {self.max_upload_size} bytes."}
-                )
-        return await call_next(request)
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope.get("method") == "POST":
+            headers = dict(scope.get("headers", []))
+            content_length = headers.get(b"content-length")
+            if content_length:
+                try:
+                    length = int(content_length.decode("latin1"))
+                    if length > self.max_upload_size:
+                        response = JSONResponse(
+                            status_code=413,
+                            content={"detail": f"Request entity too large. Max allowed is {self.max_upload_size} bytes."}
+                        )
+                        await response(scope, receive, send)
+                        return
+                except ValueError:
+                    pass
+        await self.app(scope, receive, send)
 
 
 # ── FastAPI Application Builder ───────────────────────────────────────── #

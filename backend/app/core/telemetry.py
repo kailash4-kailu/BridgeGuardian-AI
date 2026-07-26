@@ -1,14 +1,13 @@
 """
 BridgeGuardian AI — Prometheus Metrics & Monitoring Engine
-Exposes enterprise Prometheus metrics for HTTP requests, ML inference latency, prediction counts, and errors.
+Exposes enterprise Prometheus metrics for HTTP requests, ML inference latency, prediction counts, and errors using pure ASGI middleware.
 """
 from __future__ import annotations
 
 import time
 import logging
-from typing import Callable, Dict, Any
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Dict, Any
+from fastapi import Response
 
 logger = logging.getLogger("bridgeguardian.telemetry")
 
@@ -53,34 +52,48 @@ _METRICS_STORE: Dict[str, Any] = {
 }
 
 
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """Middleware that tracks HTTP request counts, status codes, and execution latencies."""
+class MetricsMiddleware:
+    """Pure ASGI Middleware tracking HTTP request counts, status codes, and latencies."""
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         start_time = time.time()
         _METRICS_STORE["http_requests_total"] += 1
+        method = scope.get("method", "GET")
+        endpoint = scope.get("path", "/")
 
-        method = request.method
-        endpoint = request.url.path
+        async def send_with_metrics(message):
+            if message["type"] == "http.response.start":
+                duration = time.time() - start_time
+                _METRICS_STORE["latency_samples"].append(round(duration, 4))
+                if len(_METRICS_STORE["latency_samples"]) > 1000:
+                    _METRICS_STORE["latency_samples"] = _METRICS_STORE["latency_samples"][-1000:]
+
+                status_code = message.get("status", 200)
+                status_str = str(status_code)
+
+                if status_code >= 400:
+                    _METRICS_STORE["http_errors_total"] += 1
+                    if HAS_PROMETHEUS:
+                        HTTP_ERRORS_TOTAL.labels(method=method, endpoint=endpoint, status=status_str).inc()
+
+                if HAS_PROMETHEUS:
+                    HTTP_REQUESTS_TOTAL.labels(method=method, endpoint=endpoint, status=status_str).inc()
+
+                headers = list(message.get("headers", []))
+                headers.append((b"x-response-time", f"{duration * 1000:.2f}ms".encode("utf-8")))
+                message["headers"] = headers
+
+            await send(message)
 
         try:
-            response = await call_next(request)
-            duration = time.time() - start_time
-            _METRICS_STORE["latency_samples"].append(round(duration, 4))
-            if len(_METRICS_STORE["latency_samples"]) > 1000:
-                _METRICS_STORE["latency_samples"] = _METRICS_STORE["latency_samples"][-1000:]
-
-            status_str = str(response.status_code)
-            if response.status_code >= 400:
-                _METRICS_STORE["http_errors_total"] += 1
-                if HAS_PROMETHEUS:
-                    HTTP_ERRORS_TOTAL.labels(method=method, endpoint=endpoint, status=status_str).inc()
-
-            if HAS_PROMETHEUS:
-                HTTP_REQUESTS_TOTAL.labels(method=method, endpoint=endpoint, status=status_str).inc()
-
-            response.headers["X-Response-Time"] = f"{duration * 1000:.2f}ms"
-            return response
+            await self.app(scope, receive, send_with_metrics)
         except Exception as exc:
             _METRICS_STORE["http_errors_total"] += 1
             if HAS_PROMETHEUS:
@@ -100,8 +113,7 @@ def get_prometheus_metrics_raw() -> Response:
     """Return raw Prometheus format metrics payload."""
     if HAS_PROMETHEUS:
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
-    
-    # Fallback text representation
+
     samples = _METRICS_STORE["latency_samples"]
     avg_lat = round(sum(samples) / max(len(samples), 1), 4) if samples else 0.0
     text = (
