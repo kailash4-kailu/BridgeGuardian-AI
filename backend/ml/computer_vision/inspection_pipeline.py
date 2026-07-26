@@ -92,19 +92,36 @@ class CampaignInspectionPipeline:
             record.progress = 0.15
             db.commit()
             
-            # 3. Process images one-by-one, updating progress
-            logger.info("Processing images through Vision AI Engine...")
-            image_results = []
+            # 3. Parallel Image Processing using ThreadPoolExecutor
+            logger.info("Processing images through Vision AI Engine in parallel...")
             total_imgs = len(image_paths)
-            
-            for idx, img_path in enumerate(image_paths):
-                # Run processor on single image to update progress bar dynamically
-                res = vision_engine.process_images([img_path], pixel_to_mm)[0]
-                image_results.append(res)
-                
-                # Update progress in DB (range 0.15 to 0.70)
-                record.progress = round(0.15 + (idx + 1) / total_imgs * 0.55, 2)
-                db.commit()
+            max_workers = min(8, max(1, os.cpu_count() or 4))
+
+            import concurrent.futures
+
+            def _process_single(path_str: str):
+                return vision_engine.process_images([path_str], pixel_to_mm)[0]
+
+            image_results = [None] * total_imgs
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_idx = {executor.submit(_process_single, path): idx for idx, path in enumerate(image_paths)}
+                completed_count = 0
+                for future in concurrent.futures.as_completed(future_to_idx):
+                    idx = future_to_idx[future]
+                    try:
+                        image_results[idx] = future.result()
+                    except Exception as exc:
+                        logger.error(f"Error processing image {image_paths[idx]}: {exc}", exc_info=True)
+                        image_results[idx] = {
+                            "image_path": image_paths[idx],
+                            "image_name": Path(image_paths[idx]).name,
+                            "is_valid": False,
+                            "warnings": [f"Processing error: {str(exc)}"],
+                            "metrics": {}
+                        }
+                    completed_count += 1
+                    record.progress = round(0.15 + (completed_count / total_imgs) * 0.55, 2)
+                    db.commit()
                 
             # 4. Merge duplicate overlapping defects
             logger.info("De-duplicating overlapping defect detections...")
