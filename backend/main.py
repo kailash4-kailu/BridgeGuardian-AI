@@ -136,6 +136,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
+        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -167,14 +168,46 @@ def create_app() -> FastAPI:
             "metrics": "/metrics",
         }
 
-    # Global Exception Handler
+    # Exception Handlers with CORS headers guarantee
+    from fastapi.exceptions import RequestValidationError
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+    from fastapi import Request
+
+    def _cors_headers(request: Request) -> dict:
+        origin = request.headers.get("origin")
+        if origin:
+            return {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true"
+            }
+        return {}
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        logger.error(f"Request validation error on {request.url.path}: {exc.errors()}", exc_info=True)
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "Validation error", "errors": exc.errors()},
+            headers=_cors_headers(request),
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        logger.warning(f"HTTP exception {exc.status_code} on {request.url.path}: {exc.detail}")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=_cors_headers(request),
+        )
+
     @app.exception_handler(Exception)
-    async def global_exception_handler(request, exc):
-        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    async def global_exception_handler(request: Request, exc: Exception):
+        logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
         err_msg = str(exc) if settings.is_development else "Internal server error"
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error", "error": err_msg},
+            headers=_cors_headers(request),
         )
 
     return app
