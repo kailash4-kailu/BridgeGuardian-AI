@@ -20,7 +20,7 @@ services:
     healthCheckPath: /api/v1/health
 
     # Auto-deploy on every push to this branch
-    branch: deployment-prep   # Change to 'main' when ready for production
+    branch: main
 
     envVars:
       # ── Core Settings ─────────────────────────────────────────────────────

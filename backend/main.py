@@ -136,7 +136,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
-        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+        allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -182,12 +182,14 @@ def create_app() -> FastAPI:
             }
         return {}
 
+    from fastapi.encoders import jsonable_encoder
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         logger.error(f"Request validation error on {request.url.path}: {exc.errors()}", exc_info=True)
         return JSONResponse(
             status_code=422,
-            content={"detail": "Validation error", "errors": exc.errors()},
+            content={"detail": "Validation error", "errors": jsonable_encoder(exc.errors())},
             headers=_cors_headers(request),
         )
 

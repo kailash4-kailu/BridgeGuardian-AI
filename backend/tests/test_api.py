@@ -27,7 +27,7 @@ def mock_train_pipeline():
         mock_train.return_value = {"status": "success", "message": "Mocked training success"}
         yield mock_train
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 SAMPLE_INPUT = {
     "Strain_microstrain": 734.5,
