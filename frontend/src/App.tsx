@@ -25,6 +25,7 @@ import {
 import './App.css'
 import DroneInspection from './components/DroneInspection'
 import { API_BASE, getStaticUrl } from './lib/api'
+import { compressImage } from './lib/imageUtils'
 
 type SensorPayload = Record<string, number | string | null>
 
@@ -398,10 +399,12 @@ function App() {
     setMessage(null)
     setVisionPrediction(null)
     
-    const formData = new FormData()
-    formData.append('files', file)
-    
     try {
+      const optimizedFile = await compressImage(file, 1920, 1920, 0.85)
+
+      const formData = new FormData()
+      formData.append('files', optimizedFile)
+
       const response = await fetch(`${API_BASE}/vision/upload-image`, {
         method: 'POST',
         body: formData,

@@ -15,7 +15,16 @@
  *   import { apiUrl, API_BASE, getStaticUrl } from '../lib/api'
  */
 
-const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || 'http://127.0.0.1:8000'
+const isRemoteProduction =
+  typeof window !== 'undefined' &&
+  !window.location.hostname.includes('localhost') &&
+  !window.location.hostname.includes('127.0.0.1')
+
+const defaultBaseUrl = isRemoteProduction
+  ? 'https://bridgeguardian-backend.onrender.com'
+  : 'http://127.0.0.1:8000'
+
+const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || defaultBaseUrl
 
 export const API_BASE = `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
 

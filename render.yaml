@@ -63,4 +63,4 @@ services:
       - key: DEMO_MODE
         value: "true"
       - key: MAX_UPLOAD_SIZE
-        value: "10485760"
+        value: "104857600"

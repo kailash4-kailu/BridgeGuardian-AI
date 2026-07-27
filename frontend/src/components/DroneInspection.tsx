@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import { API_BASE } from '../lib/api'
+import { compressImageBatch } from '../lib/imageUtils'
 
 type UploadedFile = {
   filename: string
@@ -227,12 +228,15 @@ export default function DroneInspection() {
     setIsUploading(true)
     setErrorMsg(null)
     
-    const formData = new FormData()
-    selectedFiles.forEach((file) => {
-      formData.append('files', file)
-    })
-    
     try {
+      // 0. Compress files client-side to optimize upload payload for Render & Vercel
+      const optimizedFiles = await compressImageBatch(selectedFiles, 1920, 1920, 0.85)
+
+      const formData = new FormData()
+      optimizedFiles.forEach((file) => {
+        formData.append('files', file)
+      })
+
       // 1. Upload files
       const uploadRes = await fetch(`${API_BASE}/inspection/upload-images`, {
         method: 'POST',
