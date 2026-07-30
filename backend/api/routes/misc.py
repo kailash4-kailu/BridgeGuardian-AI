@@ -11,7 +11,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from backend.core.database import get_db
-from backend.core.models import PredictionRecord
+from backend.core.models import PredictionRecord, InspectionRecord
 from backend.schemas.response import (
     EvaluationResponse,
     HealthResponse,
@@ -154,27 +154,54 @@ async def prediction_history(
     offset: int = 0,
     db: Session = Depends(get_db),
 ) -> PredictionHistoryResponse:
-    """Returns paginated prediction history from the database."""
-    total = db.query(PredictionRecord).count()
-    records = (
-        db.query(PredictionRecord)
-        .order_by(desc(PredictionRecord.created_at))
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    """Returns paginated prediction history from the database, including drone campaigns."""
+    pred_records = db.query(PredictionRecord).all()
+    inspection_records = db.query(InspectionRecord).filter(InspectionRecord.status == "completed").all()
 
-    items = [
-        PredictionHistoryItem(
-            id=r.id,
-            created_at=r.created_at,
-            health_score=r.health_score * 100 if r.health_score else None,
-            failure_probability=r.failure_probability * 100 if r.failure_probability else None,
-            rul_days=r.rul_days,
-            risk_category=r.risk_category,
-            maintenance_priority=r.maintenance_priority,
-            model_version=r.model_version,
+    combined_items = []
+
+    for r in pred_records:
+        h_score = r.health_score * 100 if (r.health_score is not None and r.health_score <= 1.0) else r.health_score
+        f_prob = r.failure_probability * 100 if (r.failure_probability is not None and r.failure_probability <= 1.0) else r.failure_probability
+        combined_items.append(
+            PredictionHistoryItem(
+                id=r.id,
+                created_at=r.created_at,
+                health_score=h_score,
+                failure_probability=f_prob,
+                rul_days=r.rul_days,
+                risk_category=r.risk_category,
+                maintenance_priority=r.maintenance_priority,
+                model_version=r.model_version or "Vibration & Telemetry ML",
+            )
         )
-        for r in records
-    ]
-    return PredictionHistoryResponse(items=items, total=total)
+
+    for i in inspection_records:
+        h_score = i.health_score
+        f_prob = i.failure_probability
+        combined_items.append(
+            PredictionHistoryItem(
+                id=10000 + i.id,
+                created_at=i.created_at,
+                health_score=h_score,
+                failure_probability=f_prob,
+                rul_days=i.rul_days,
+                risk_category=i.risk_category,
+                maintenance_priority=i.maintenance_priority,
+                model_version="Drone Campaign YOLOv11/SAM2",
+            )
+        )
+
+    def get_sort_key(item: PredictionHistoryItem) -> datetime:
+        if not item.created_at:
+            return datetime.min
+        if item.created_at.tzinfo is not None:
+            return item.created_at.replace(tzinfo=None)
+        return item.created_at
+
+    # Sort descending by creation timestamp
+    combined_items.sort(key=get_sort_key, reverse=True)
+    total = len(combined_items)
+    paginated_items = combined_items[offset : offset + limit]
+
+    return PredictionHistoryResponse(items=paginated_items, total=total)

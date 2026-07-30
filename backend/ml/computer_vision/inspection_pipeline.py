@@ -246,6 +246,26 @@ class CampaignInspectionPipeline:
             record.performance_metrics_json = json.dumps(clean_numpy_types(perf_metrics))
             record.model_metadata_json = json.dumps(clean_numpy_types(model_metadata))
             
+            # Persist to PredictionRecord so campaign results appear in History (/history API)
+            try:
+                from backend.core.models import PredictionRecord
+                h_val = float(health_predictions["health_score"])
+                f_val = float(health_predictions["failure_probability"])
+                pred_rec = PredictionRecord(
+                    input_data=json.dumps({"campaign_id": inspection_id, "image_count": total_imgs}),
+                    health_score=round(h_val / 100.0, 4) if h_val > 1.0 else h_val,
+                    failure_probability=round(f_val / 100.0, 4) if f_val > 1.0 else f_val,
+                    rul_days=float(health_predictions["rul_days"]),
+                    risk_category=str(health_predictions["risk_category"]),
+                    maintenance_priority=str(maintenance_plan["maintenance_priority"]),
+                    maintenance_recommendation=str(maintenance_plan["maintenance_action"]),
+                    prediction_confidence=float(health_predictions.get("prediction_confidence", 0.95)),
+                    model_version="YOLOv11 / SAM2 Drone Campaign"
+                )
+                db.add(pred_rec)
+            except Exception as p_err:
+                logger.warning(f"Could not persist PredictionRecord for campaign #{inspection_id}: {p_err}")
+
             db.commit()
             logger.info(f"Campaign campaign_id={inspection_id} completed successfully in {duration:.2f}s")
             

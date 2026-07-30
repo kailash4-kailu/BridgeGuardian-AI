@@ -844,7 +844,7 @@ function App() {
                 </button>
               </div>
             </header>
-            <DroneInspection />
+            <DroneInspection onCampaignComplete={refreshSystem} />
           </>
         ) : (
           <>

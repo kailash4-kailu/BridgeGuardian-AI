@@ -138,7 +138,7 @@ type InspectionRecord = {
   } | null
 }
 
-export default function DroneInspection() {
+export default function DroneInspection({ onCampaignComplete }: { onCampaignComplete?: () => void }) {
   // Upload and queue state
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
@@ -190,7 +190,9 @@ export default function DroneInspection() {
         
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(interval)
-          if (data.status === 'failed') {
+          if (data.status === 'completed') {
+            onCampaignComplete?.()
+          } else if (data.status === 'failed') {
             setErrorMsg(data.summary_report || 'Campaign inspection failed on backend server.')
           }
         }
@@ -200,7 +202,7 @@ export default function DroneInspection() {
     }, 2000)
     
     return () => clearInterval(interval)
-  }, [inspectionId])
+  }, [inspectionId, onCampaignComplete])
 
   // Drag and Drop handlers
   const handleDragOver = (e: React.DragEvent) => {
