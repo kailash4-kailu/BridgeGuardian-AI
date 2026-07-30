@@ -236,6 +236,9 @@ class FeatureEngineer:
             "wind_x_deflection": ("Wind_Speed_ms", "Deflection_mm"),
             "vibration_x_fatigue": ("Vibration_ms2", "Fatigue_Accumulation_au"),
             "crack_x_corrosion": ("Crack_Propagation_mm", "Corrosion_Level_percent"),
+            "strain_x_deflection": ("Strain_microstrain", "Deflection_mm"),
+            "env_severity_index": ("Temperature_C", "Humidity_percent"),
+            "fatigue_x_corrosion": ("Fatigue_Accumulation_au", "Corrosion_Level_percent"),
         }
 
         for feature_name, (left, right) in interactions.items():
@@ -243,5 +246,14 @@ class FeatureEngineer:
                 df[feature_name] = df[left] * df[right]
                 self.generated_features.append(feature_name)
 
+        if "Vibration_ms2" in df.columns and "Modal_Frequency_Hz" in df.columns:
+            df["vibration_modal_ratio"] = df["Vibration_ms2"] / (df["Modal_Frequency_Hz"].abs() + 1e-4)
+            self.generated_features.append("vibration_modal_ratio")
+
+        if "Cable_Member_Tension_kN" in df.columns and "Bearing_Joint_Forces_kN" in df.columns:
+            df["cable_bearing_ratio"] = df["Cable_Member_Tension_kN"] / (df["Bearing_Joint_Forces_kN"].abs() + 1e-4)
+            self.generated_features.append("cable_bearing_ratio")
+
         logger.debug("Added interaction features")
         return df
+

@@ -53,12 +53,17 @@ except (ImportError, Exception):
 logger = logging.getLogger("bridgeguardian.model_trainer")
 
 
+from backend.ml.prediction.stacking_ensemble import (
+    StackedEnsembleClassifier,
+    StackedEnsembleRegressor,
+)
+
 class ModelTrainer:
     """
     Trains multiple regression and classification models, compares them,
     selects the best, and persists all artifacts.
 
-    Supports: RandomForest, ExtraTrees, GradientBoosting, XGBoost, LightGBM, CatBoost
+    Supports: RandomForest, ExtraTrees, GradientBoosting, XGBoost, LightGBM, CatBoost, StackedEnsemble
     """
 
     REGRESSION_PARAM_GRIDS: Dict[str, Dict] = {
@@ -225,6 +230,9 @@ class ModelTrainer:
                 "GradientBoosting": GradientBoostingRegressor(
                     n_estimators=100, random_state=rs
                 ),
+                "StackedEnsemble": StackedEnsembleRegressor(
+                    n_splits=5, random_state=rs
+                ),
             }
             if XGB_AVAILABLE:
                 models["XGBoost"] = xgb.XGBRegressor(
@@ -245,6 +253,9 @@ class ModelTrainer:
                     n_estimators=100, class_weight="balanced",
                     random_state=rs, n_jobs=n_jobs
                 ),
+                "StackedEnsemble": StackedEnsembleClassifier(
+                    n_splits=5, random_state=rs
+                ),
             }
             if XGB_AVAILABLE:
                 scale_pos_weight = 50  # rough ratio for imbalanced alert
@@ -259,6 +270,7 @@ class ModelTrainer:
                 )
 
         return models
+
 
     def _build_time_series_split(self, n_samples: int) -> TimeSeriesSplit:
         """Build a valid TimeSeriesSplit for the available sample count."""

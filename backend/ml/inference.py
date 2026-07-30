@@ -206,6 +206,8 @@ class InferencePipeline:
             "failure_probability": round(failure_prob * 100, 2),  # %
             "failure_probability_raw": round(failure_prob, 4),
             "rul_days": rul_result["rul_days"],
+            "rul_confidence_interval": rul_result.get("rul_confidence_interval", {}),
+            "survival_reliability_30d": rul_result.get("survival_reliability_30d", 1.0),
             "rul_degradation_rate": rul_result["degradation_rate_per_day"],
             "rul_confidence": rul_result["confidence"],
             "rul_message": rul_result["message"],
@@ -216,6 +218,7 @@ class InferencePipeline:
             "prediction_confidence": confidence,
             "model_version": self._model_version,
         }
+
 
     def explain(self, input_data: Dict[str, Any], target: str = "health_score") -> Dict[str, Any]:
         """

@@ -163,19 +163,36 @@ export default function DroneInspection() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const folderInputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-poll if inspection is running
+  // Auto-poll if inspection is running with transient error tolerance
+  const consecutiveErrorsRef = useRef<number>(0)
+
   useEffect(() => {
     if (inspectionId === null) return
+    consecutiveErrorsRef.current = 0
     
     const interval = setInterval(async () => {
       try {
         const response = await fetch(`${API_BASE}/inspection/${inspectionId}`)
-        if (!response.ok) throw new Error('Failed to fetch inspection status')
+        if (!response.ok) {
+          consecutiveErrorsRef.current += 1
+          if (consecutiveErrorsRef.current >= 4) {
+            throw new Error(`Failed to fetch inspection status (HTTP ${response.status})`)
+          }
+          return
+        }
+        
+        // On successful poll, reset error counter and clear transient error message
+        consecutiveErrorsRef.current = 0
+        setErrorMsg(null)
+        
         const data = (await response.json()) as InspectionRecord
         setRecord(data)
         
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(interval)
+          if (data.status === 'failed') {
+            setErrorMsg(data.summary_report || 'Campaign inspection failed on backend server.')
+          }
         }
       } catch (err: any) {
         setErrorMsg(err.message)
@@ -194,16 +211,32 @@ export default function DroneInspection() {
     e.preventDefault()
     if (e.dataTransfer.files) {
       const filesArr = Array.from(e.dataTransfer.files).filter((file) =>
-        ['image/jpeg', 'image/png'].includes(file.type)
+        ['image/jpeg', 'image/png', 'image/webp'].includes(file.type)
       )
-      setSelectedFiles((prev) => [...prev, ...filesArr])
+      setSelectedFiles((prev) => {
+        const combined = [...prev, ...filesArr]
+        if (combined.length > 20) {
+          setErrorMsg(`Maximum 20 photos allowed per campaign. First 20 photos selected.`)
+          return combined.slice(0, 20)
+        }
+        setErrorMsg(null)
+        return combined
+      })
     }
   }
 
   const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArr = Array.from(e.target.files)
-      setSelectedFiles((prev) => [...prev, ...filesArr])
+      setSelectedFiles((prev) => {
+        const combined = [...prev, ...filesArr]
+        if (combined.length > 20) {
+          setErrorMsg(`Maximum 20 photos allowed per campaign. First 20 photos selected.`)
+          return combined.slice(0, 20)
+        }
+        setErrorMsg(null)
+        return combined
+      })
     }
   }
 
@@ -221,8 +254,8 @@ export default function DroneInspection() {
 
   // Upload trigger
   const runInspectionCampaign = async () => {
-    if (selectedFiles.length < 5 || selectedFiles.length > 100) {
-      setErrorMsg(`Campaign requires between 5 and 100 photos. Currently selected: ${selectedFiles.length}.`)
+    if (selectedFiles.length < 5 || selectedFiles.length > 20) {
+      setErrorMsg(`Campaign requires between 5 and 20 photos. Currently selected: ${selectedFiles.length}.`)
       return
     }
     setIsUploading(true)
@@ -388,7 +421,7 @@ export default function DroneInspection() {
           >
             <div className="dropzone-inner">
               <Upload size={44} className="upload-icon" />
-              <h3>Select 5 - 100 Drone Inspection Photos</h3>
+              <h3>Select 5 - 20 Drone Inspection Photos</h3>
               <p>Drag and drop image files here, or click to upload</p>
               <small>Supported formats: JPG, JPEG, PNG</small>
             </div>

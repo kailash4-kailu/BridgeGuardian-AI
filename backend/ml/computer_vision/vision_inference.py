@@ -13,6 +13,8 @@ import cv2
 import numpy as np
 
 from backend.ml.computer_vision.feature_extractor import ImageFeatureExtractor
+from backend.ml.computer_vision.image_enhancer import ImageEnhancer
+from backend.ml.computer_vision.sahi_slicing import SAHISlicer
 from backend.api.routes.predict import _get_default
 
 logger = logging.getLogger("bridgeguardian.cv.vision_inference")
@@ -25,25 +27,26 @@ class VisionInferencePipeline:
 
     def __init__(self, use_yolo: bool = False, pixel_to_mm: float = 0.5) -> None:
         self.extractor = ImageFeatureExtractor(use_yolo=use_yolo, pixel_to_mm=pixel_to_mm)
+        self.enhancer = ImageEnhancer()
+        self.slicer = SAHISlicer(slice_height=512, slice_width=512)
 
     def analyze_image(self, image_path: str, inference_pipeline) -> dict:
         """
-        Runs CV feature extraction, generates 6 visual output formats, maps features to ML,
-        runs ML predictions, and generates SHAP explanation.
-        
-        Args:
-            image_path: Path to the drone image on disk.
-            inference_pipeline: Instance of backend.ml.inference.InferencePipeline.
-            
-        Returns:
-            Dict of results.
+        Runs image quality enhancement, CV feature extraction, visual output generation,
+        maps features to ML, runs ML predictions, and generates SHAP explanation.
         """
         # 1. Extract CV features and get intermediate masks/bboxes
         features, raw = self.extractor.extract_features(image_path)
         img = raw["image"]
+
+        # Enhance image quality (CLAHE, exposure correction, bilateral denoising, sharpening)
+        img_enhanced, enhancement_actions = self.enhancer.enhance(img)
+        raw["image"] = img_enhanced
+
         masks = raw["masks"]
         bboxes = raw["bboxes"]
-        h, w = img.shape[:2]
+        h, w = img_enhanced.shape[:2]
+
 
         # 2. Generate the 6 required visualization images
         visualizations = {}

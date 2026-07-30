@@ -95,7 +95,7 @@ class CampaignInspectionPipeline:
             # 3. Parallel Image Processing using ThreadPoolExecutor
             logger.info("Processing images through Vision AI Engine in parallel...")
             total_imgs = len(image_paths)
-            max_workers = min(8, max(1, os.cpu_count() or 4))
+            max_workers = int(os.getenv("MAX_CONCURRENT_WORKERS", str(min(4, max(1, os.cpu_count() or 1)))))
 
             import concurrent.futures
 
@@ -252,4 +252,5 @@ class CampaignInspectionPipeline:
         except Exception as e:
             logger.error(f"Campaign execution failed on campaign_id={inspection_id}: {e}", exc_info=True)
             record.status = "failed"
+            record.summary_report = f"Campaign processing error: {str(e)}"
             db.commit()
