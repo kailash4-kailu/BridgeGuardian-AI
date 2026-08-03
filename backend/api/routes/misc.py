@@ -154,15 +154,29 @@ async def prediction_history(
     offset: int = 0,
     db: Session = Depends(get_db),
 ) -> PredictionHistoryResponse:
-    """Returns paginated prediction history from the database, including drone campaigns."""
+    """Returns paginated prediction history from the database across all analysis workflows (Structural Health, Single Image, Drone Campaign)."""
     pred_records = db.query(PredictionRecord).all()
-    inspection_records = db.query(InspectionRecord).filter(InspectionRecord.status == "completed").all()
+    inspection_records = db.query(InspectionRecord).all()
 
     combined_items = []
+    seen_campaign_ids = set()
 
     for r in pred_records:
         h_score = r.health_score * 100 if (r.health_score is not None and r.health_score <= 1.0) else r.health_score
         f_prob = r.failure_probability * 100 if (r.failure_probability is not None and r.failure_probability <= 1.0) else r.failure_probability
+        
+        analysis_type = r.analysis_type
+        if not analysis_type:
+            if r.campaign_id:
+                analysis_type = "Drone Campaign"
+            elif "image_id" in (r.input_data or "") or "image_path" in (r.input_data or ""):
+                analysis_type = "Single Image"
+            else:
+                analysis_type = "Structural Health"
+
+        if r.campaign_id:
+            seen_campaign_ids.add(r.campaign_id)
+
         combined_items.append(
             PredictionHistoryItem(
                 id=r.id,
@@ -172,23 +186,47 @@ async def prediction_history(
                 rul_days=r.rul_days,
                 risk_category=r.risk_category,
                 maintenance_priority=r.maintenance_priority,
+                maintenance_recommendation=r.maintenance_recommendation,
                 model_version=r.model_version or "Vibration & Telemetry ML",
+                analysis_type=analysis_type,
+                campaign_id=r.campaign_id,
+                image_count=r.image_count,
+                status=r.status or "completed",
+                summary_report=r.summary_report,
             )
         )
 
+    # For backward compatibility: add any legacy InspectionRecords not already in PredictionRecords
     for i in inspection_records:
-        h_score = i.health_score
-        f_prob = i.failure_probability
+        if i.id in seen_campaign_ids:
+            continue
+            
+        h_score = i.health_score * 100 if (i.health_score is not None and i.health_score <= 1.0) else i.health_score
+        f_prob = i.failure_probability * 100 if (i.failure_probability is not None and i.failure_probability <= 1.0) else i.failure_probability
+        
+        img_count = 0
+        if i.images_json:
+            try:
+                img_count = len(json.loads(i.images_json))
+            except Exception:
+                pass
+
         combined_items.append(
             PredictionHistoryItem(
-                id=10000 + i.id,
+                id=100000 + i.id,
                 created_at=i.created_at,
                 health_score=h_score,
                 failure_probability=f_prob,
                 rul_days=i.rul_days,
                 risk_category=i.risk_category,
                 maintenance_priority=i.maintenance_priority,
+                maintenance_recommendation=i.maintenance_action,
                 model_version="Drone Campaign YOLOv11/SAM2",
+                analysis_type="Drone Campaign",
+                campaign_id=i.id,
+                image_count=img_count,
+                status=i.status or "completed",
+                summary_report=i.summary_report,
             )
         )
 

@@ -631,11 +631,24 @@ h2 {
 .history-row {
   display: grid;
   min-height: 42px;
-  grid-template-columns: minmax(120px, 1.2fr) 0.55fr 0.55fr minmax(90px, 0.75fr);
+  grid-template-columns: minmax(100px, 1fr) minmax(110px, 1.1fr) 0.5fr 0.55fr minmax(80px, 0.7fr);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 0 2px;
   border-bottom: 1px solid #e4eae1;
+}
+
+.workflow-tag {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #0070f3;
+  background: rgba(0, 112, 243, 0.08);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .history-row.header {

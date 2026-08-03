@@ -251,18 +251,26 @@ class CampaignInspectionPipeline:
                 from backend.core.models import PredictionRecord
                 h_val = float(health_predictions["health_score"])
                 f_val = float(health_predictions["failure_probability"])
-                pred_rec = PredictionRecord(
-                    input_data=json.dumps({"campaign_id": inspection_id, "image_count": total_imgs}),
-                    health_score=round(h_val / 100.0, 4) if h_val > 1.0 else h_val,
-                    failure_probability=round(f_val / 100.0, 4) if f_val > 1.0 else f_val,
-                    rul_days=float(health_predictions["rul_days"]),
-                    risk_category=str(health_predictions["risk_category"]),
-                    maintenance_priority=str(maintenance_plan["maintenance_priority"]),
-                    maintenance_recommendation=str(maintenance_plan["maintenance_action"]),
-                    prediction_confidence=float(health_predictions.get("prediction_confidence", 0.95)),
-                    model_version="YOLOv11 / SAM2 Drone Campaign"
-                )
-                db.add(pred_rec)
+                
+                # Check if PredictionRecord already exists for this campaign_id
+                pred_rec = db.query(PredictionRecord).filter(PredictionRecord.campaign_id == inspection_id).first()
+                if not pred_rec:
+                    pred_rec = PredictionRecord(campaign_id=inspection_id)
+                    db.add(pred_rec)
+
+                pred_rec.input_data = json.dumps({"campaign_id": inspection_id, "image_count": total_imgs})
+                pred_rec.health_score = h_val
+                pred_rec.failure_probability = f_val
+                pred_rec.rul_days = float(health_predictions["rul_days"])
+                pred_rec.risk_category = str(health_predictions["risk_category"])
+                pred_rec.maintenance_priority = str(maintenance_plan["maintenance_priority"])
+                pred_rec.maintenance_recommendation = str(maintenance_plan["maintenance_action"])
+                pred_rec.prediction_confidence = float(health_predictions.get("prediction_confidence", 0.95))
+                pred_rec.model_version = "YOLOv11 / SAM2 Drone Campaign"
+                pred_rec.analysis_type = "Drone Campaign"
+                pred_rec.image_count = total_imgs
+                pred_rec.summary_report = str(explainability_res.get("summary_report", ""))
+                pred_rec.status = "completed"
             except Exception as p_err:
                 logger.warning(f"Could not persist PredictionRecord for campaign #{inspection_id}: {p_err}")
 
@@ -273,4 +281,12 @@ class CampaignInspectionPipeline:
             logger.error(f"Campaign execution failed on campaign_id={inspection_id}: {e}", exc_info=True)
             record.status = "failed"
             record.summary_report = f"Campaign processing error: {str(e)}"
+            try:
+                from backend.core.models import PredictionRecord
+                pred_rec = db.query(PredictionRecord).filter(PredictionRecord.campaign_id == inspection_id).first()
+                if pred_rec:
+                    pred_rec.status = "failed"
+                    pred_rec.summary_report = f"Campaign processing error: {str(e)}"
+            except Exception:
+                pass
             db.commit()

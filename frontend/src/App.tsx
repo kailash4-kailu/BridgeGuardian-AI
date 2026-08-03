@@ -91,7 +91,13 @@ type HistoryItem = {
   rul_days: number | null
   risk_category: string | null
   maintenance_priority: string | null
+  maintenance_recommendation?: string | null
   model_version: string | null
+  analysis_type?: string | null
+  campaign_id?: number | null
+  image_count?: number | null
+  status?: string | null
+  summary_report?: string | null
 }
 
 type HistoryResponse = {
@@ -769,6 +775,7 @@ function App() {
                 <div className="history-table">
                   <div className="history-row header">
                     <span>Time</span>
+                    <span>Workflow</span>
                     <span>SHI</span>
                     <span>PoF</span>
                     <span>Priority</span>
@@ -779,6 +786,9 @@ function App() {
                     history.map((item) => (
                       <div className="history-row" key={item.id}>
                         <span>{compactDate(item.created_at)}</span>
+                        <span className="workflow-tag" title={item.model_version || ''}>
+                          {item.analysis_type ?? 'Structural Health'}
+                        </span>
                         <strong>{formatNumber(item.health_score, 1)}</strong>
                         <span>{formatNumber(item.failure_probability, 2)}%</span>
                         <span className={riskTone(item.risk_category)}>{item.maintenance_priority ?? '--'}</span>

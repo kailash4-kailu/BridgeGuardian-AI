@@ -37,8 +37,13 @@ class PredictionRecord(Base):
     prediction_confidence: Mapped[float] = mapped_column(Float, nullable=True)
     repair_cost_estimate: Mapped[float] = mapped_column(Float, nullable=True)
 
-    # Model metadata
+    # Model metadata & Workflow tagging
     model_version: Mapped[str] = mapped_column(String(50), nullable=True)
+    analysis_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="Structural Health")
+    campaign_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    image_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    summary_report: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="completed")
 
     __table_args__ = (
         Index("ix_prediction_records_created_at", "created_at"),

@@ -139,7 +139,7 @@ def run_20_photos_inspection():
     print(f"  Campaign ID: #{record.id}")
     print(f"  Status: {record.status}")
     print(f"  Health Score: {record.health_score:.2f} / 100")
-    print(f"  Failure Probability: {record.failure_probability:.2%}")
+    print(f"  Failure Probability: {record.failure_probability:.2f}%")
     print(f"  Estimated RUL: {record.rul_days} days")
     print(f"  Risk Category: {record.risk_category}")
     print(f"  Maintenance Priority: {record.maintenance_priority}")

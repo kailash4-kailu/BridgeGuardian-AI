@@ -104,12 +104,18 @@ class HealthResponse(BaseModel):
 class PredictionHistoryItem(BaseModel):
     id: int
     created_at: datetime
-    health_score: Optional[float]
-    failure_probability: Optional[float]
-    rul_days: Optional[float]
-    risk_category: Optional[str]
-    maintenance_priority: Optional[str]
-    model_version: Optional[str]
+    health_score: Optional[float] = None
+    failure_probability: Optional[float] = None
+    rul_days: Optional[float] = None
+    risk_category: Optional[str] = None
+    maintenance_priority: Optional[str] = None
+    maintenance_recommendation: Optional[str] = None
+    model_version: Optional[str] = None
+    analysis_type: Optional[str] = "Structural Health"
+    campaign_id: Optional[int] = None
+    image_count: Optional[int] = None
+    status: Optional[str] = "completed"
+    summary_report: Optional[str] = None
 
 
 class PredictionHistoryResponse(BaseModel):
