@@ -69,31 +69,31 @@ class ModelTrainer:
     REGRESSION_PARAM_GRIDS: Dict[str, Dict] = {
         "RandomForest": {
             "n_estimators": [100, 200, 300],
-            "max_depth": [None, 10, 20],
+            "max_depth": [10, 20, 30, None],
             "min_samples_split": [2, 5, 10],
-            "max_features": ["sqrt", "log2"],
+            "max_features": ["sqrt", "log2", 0.8],
         },
         "ExtraTrees": {
-            "n_estimators": [100, 200],
-            "max_depth": [None, 15, 30],
+            "n_estimators": [100, 200, 300],
+            "max_depth": [15, 30, None],
             "min_samples_split": [2, 5],
         },
         "GradientBoosting": {
             "n_estimators": [100, 200],
-            "learning_rate": [0.05, 0.1, 0.2],
+            "learning_rate": [0.03, 0.05, 0.1],
             "max_depth": [3, 5, 7],
             "subsample": [0.8, 1.0],
         },
         "XGBoost": {
             "n_estimators": [100, 200, 300],
-            "learning_rate": [0.05, 0.1, 0.2],
+            "learning_rate": [0.03, 0.05, 0.1],
             "max_depth": [4, 6, 8],
             "subsample": [0.8, 1.0],
             "colsample_bytree": [0.8, 1.0],
         },
         "LightGBM": {
             "n_estimators": [100, 200, 300],
-            "learning_rate": [0.05, 0.1, 0.2],
+            "learning_rate": [0.03, 0.05, 0.1],
             "num_leaves": [31, 63, 127],
             "min_child_samples": [20, 50],
         },
@@ -101,6 +101,41 @@ class ModelTrainer:
             "iterations": [100, 200],
             "learning_rate": [0.05, 0.1],
             "depth": [4, 6, 8],
+        },
+        "StackedEnsemble": {
+            "n_splits": [3, 5],
+            "meta_alpha": [0.1, 1.0, 10.0],
+        },
+    }
+
+    CLASSIFICATION_PARAM_GRIDS: Dict[str, Dict] = {
+        "RandomForest": {
+            "n_estimators": [100, 200, 300],
+            "max_depth": [10, 20, None],
+            "min_samples_split": [2, 5, 10],
+            "class_weight": ["balanced", "balanced_subsample"],
+        },
+        "ExtraTrees": {
+            "n_estimators": [100, 200],
+            "max_depth": [15, 30, None],
+            "min_samples_split": [2, 5],
+            "class_weight": ["balanced", "balanced_subsample"],
+        },
+        "XGBoost": {
+            "n_estimators": [100, 200, 300],
+            "learning_rate": [0.03, 0.05, 0.1],
+            "max_depth": [4, 6, 8],
+            "subsample": [0.8, 1.0],
+            "scale_pos_weight": [1, 10, 50],
+        },
+        "LightGBM": {
+            "n_estimators": [100, 200, 300],
+            "learning_rate": [0.03, 0.05, 0.1],
+            "num_leaves": [31, 63, 127],
+            "class_weight": ["balanced", None],
+        },
+        "StackedEnsemble": {
+            "n_splits": [3, 5],
         },
     }
 
@@ -144,11 +179,13 @@ class ModelTrainer:
         models = self._build_model_candidates(task)
         tscv = self._build_time_series_split(len(X_train))
 
+        param_grids = self.REGRESSION_PARAM_GRIDS if task == "regression" else self.CLASSIFICATION_PARAM_GRIDS
+
         for name, model in models.items():
-            logger.info(f"  → Training {name} ...")
+            logger.info(f"  -> Training {name} ...")
             t0 = time.time()
 
-            param_grid = self.REGRESSION_PARAM_GRIDS.get(name, {})
+            param_grid = param_grids.get(name, {})
             if param_grid:
                 search = RandomizedSearchCV(
                     model,
@@ -200,7 +237,7 @@ class ModelTrainer:
         """Persist a trained model to disk."""
         path = self.models_dir / f"{name}.joblib"
         joblib.dump(model, path)
-        logger.info(f"Model saved → {path}")
+        logger.info(f"Model saved -> {path}")
         return path
 
     def load_model(self, name: str) -> Any:
@@ -250,6 +287,10 @@ class ModelTrainer:
         else:  # classification
             models = {
                 "RandomForest": RandomForestClassifier(
+                    n_estimators=100, class_weight="balanced",
+                    random_state=rs, n_jobs=n_jobs
+                ),
+                "ExtraTrees": ExtraTreesClassifier(
                     n_estimators=100, class_weight="balanced",
                     random_state=rs, n_jobs=n_jobs
                 ),

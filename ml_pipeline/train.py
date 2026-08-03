@@ -428,7 +428,7 @@ def train_pipeline(config_path: str = "config/config.yaml") -> Dict[str, Any]:
         y_te = y_te.reset_index(drop=True)
 
         logger.info(f"\n{'='*60}")
-        logger.info(f"Training → {model_key} ({task}): {len(X_tr):,} samples")
+        logger.info(f"Training -> {model_key} ({task}): {len(X_tr):,} samples")
 
         # Train
         best_model, train_info = trainer.train_all(
@@ -484,8 +484,8 @@ def train_pipeline(config_path: str = "config/config.yaml") -> Dict[str, Any]:
 
     elapsed = round(time.time() - start_time, 1)
     logger.info(f"\n{'='*60}")
-    logger.info(f"✅ Training complete in {elapsed}s. Version: {version}")
-    logger.info(f"Results saved → {models_dir}/training_results.json")
+    logger.info(f"[SUCCESS] Training complete in {elapsed}s. Version: {version}")
+    logger.info(f"Results saved -> {models_dir}/training_results.json")
 
     return {
         "version": version,
