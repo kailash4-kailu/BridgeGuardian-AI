@@ -1,0 +1,120 @@
+.splash-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  background: radial-gradient(circle at 50% 40%, #0c1e38 0%, #06101e 60%, #030810 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+.splash-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Background grid pattern */
+.splash-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(0, 210, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 210, 255, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* Radiant glow behind logo */
+.splash-bg-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 112, 243, 0.25) 0%, rgba(0, 210, 255, 0.08) 40%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: splashPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes splashPulse {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 0.9; }
+}
+
+/* Main splash container */
+.splash-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 90vw;
+  padding: 2rem;
+  animation: splashZoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes splashZoomIn {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.splash-logo-container {
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: center;
+  filter: drop-shadow(0 20px 40px rgba(0, 112, 243, 0.3));
+}
+
+.splash-logo-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  max-height: 220px;
+}
+
+/* Loader Track & Bar */
+.splash-loader-wrapper {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.splash-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 210, 255, 0.15);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.splash-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #0070f3 0%, #00d2ff 60%, #10b981 100%);
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+}
+
+.splash-status-text {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+  text-align: center;
+}

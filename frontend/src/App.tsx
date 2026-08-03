@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import DroneInspection from './components/DroneInspection'
+import SplashScreen from './components/SplashScreen'
 import { API_BASE, getStaticUrl } from './lib/api'
 import { compressImage } from './lib/imageUtils'
 
@@ -491,11 +492,13 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-mark">
-          <ShieldCheck size={28} aria-hidden="true" />
-        </div>
+    <>
+      <SplashScreen />
+      <main className="app-shell">
+        <aside className="sidebar">
+          <div className="brand-mark" title="BridgeGuardian AI">
+            <img src="/logo-icon.svg" alt="BridgeGuardian AI Logo" />
+          </div>
         <nav className="rail" aria-label="Primary">
           <button
             type="button"
@@ -1081,6 +1084,7 @@ function App() {
         )}
       </section>
     </main>
+  </>
   )
 }
 

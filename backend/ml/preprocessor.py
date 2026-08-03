@@ -68,7 +68,7 @@ class Preprocessor:
     # ------------------------------------------------------------------ #
 
     def _clean(self, df: pd.DataFrame, fit: bool) -> pd.DataFrame:
-        df = df.copy()
+        df = df.loc[:, ~df.columns.duplicated()].copy()
         logger.info(f"Preprocessing start. Shape: {df.shape}, fit={fit}")
 
         df = self._drop_irrelevant(df, fit)
@@ -111,10 +111,13 @@ class Preprocessor:
         """Impute numeric missing with median, categorical with mode."""
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         # Identify string-like categorical columns (exclude already-encoded)
-        cat_cols = [
-            c for c in df.columns
-            if df[c].dtype == object or str(df[c].dtype) == "string"
-        ]
+        cat_cols = []
+        for c in df.columns:
+            dtype_val = df.dtypes[c]
+            if isinstance(dtype_val, pd.Series):
+                dtype_val = dtype_val.iloc[0]
+            if dtype_val == object or str(dtype_val) == "string":
+                cat_cols.append(c)
 
         if fit:
             self._numeric_columns = num_cols
@@ -126,13 +129,16 @@ class Preprocessor:
                     df[self._numeric_columns]
                 )
             else:
-                for col in self._numeric_columns:
-                    if col not in df.columns:
-                        df[col] = np.nan
                 if self._numeric_imputer is not None:
-                    df[self._numeric_columns] = self._numeric_imputer.transform(
-                        df[self._numeric_columns]
-                    )
+                    n_exp = getattr(self._numeric_imputer, "n_features_in_", len(self._numeric_columns))
+                    if hasattr(self._numeric_imputer, "feature_names_in_"):
+                        impute_cols = list(self._numeric_imputer.feature_names_in_)[:n_exp]
+                    else:
+                        impute_cols = self._numeric_columns[:n_exp]
+                    for col in impute_cols:
+                        if col not in df.columns:
+                            df[col] = 0.0
+                    df[impute_cols] = self._numeric_imputer.transform(df[impute_cols].to_numpy())
                 else:
                     df[self._numeric_columns] = df[self._numeric_columns].fillna(0.0)
 
@@ -150,10 +156,13 @@ class Preprocessor:
 
     def _encode_categoricals(self, df: pd.DataFrame, fit: bool) -> pd.DataFrame:
         """Ordinal-encode categorical features with LabelEncoder."""
-        cat_cols = [
-            c for c in df.columns
-            if df[c].dtype == object or str(df[c].dtype) == "string"
-        ]
+        cat_cols = []
+        for c in df.columns:
+            dtype_val = df.dtypes[c]
+            if isinstance(dtype_val, pd.Series):
+                dtype_val = dtype_val.iloc[0]
+            if dtype_val == object or str(dtype_val) == "string":
+                cat_cols.append(c)
         self._cat_columns = cat_cols if fit else self._cat_columns
 
         if not fit:
@@ -215,12 +224,14 @@ class Preprocessor:
             self._feature_columns = num_cols
         else:
             if self._scaler is not None:
-                available = [c for c in self._feature_columns if c in df.columns]
-                missing_cols = [c for c in self._feature_columns if c not in df.columns]
-                if missing_cols:
-                    logger.warning(f"Missing feature columns at inference: {missing_cols}")
-                    for c in missing_cols:
+                n_exp_s = getattr(self._scaler, "n_features_in_", len(self._feature_columns))
+                if hasattr(self._scaler, "feature_names_in_"):
+                    scaler_cols = list(self._scaler.feature_names_in_)[:n_exp_s]
+                else:
+                    scaler_cols = self._feature_columns[:n_exp_s]
+                for c in scaler_cols:
+                    if c not in df.columns:
                         df[c] = 0.0
-                df[self._feature_columns] = self._scaler.transform(df[self._feature_columns])
+                df[scaler_cols] = self._scaler.transform(df[scaler_cols].to_numpy())
 
         return df
