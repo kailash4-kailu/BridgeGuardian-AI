@@ -11,7 +11,7 @@ import InspectionIntelligence from './components/inspection/InspectionIntelligen
 import DroneInspection from './components/DroneInspection'
 
 import { apiClient, ApiError } from './lib/apiClient'
-import { getStaticUrl } from './lib/api'
+import { API_BASE, getStaticUrl } from './lib/api'
 import { compressImage } from './lib/imageUtils'
 import type {
   TabType,
@@ -262,14 +262,19 @@ function App() {
   }
 
   async function downloadReport() {
-    if (!visionImageId || !visionPrediction) return
+    if (!visionImageId || !visionPrediction) {
+      throw new Error('NO_INSPECTION_RUN')
+    }
     setIsGeneratingReport(true)
-    setMessage(null)
     try {
       const response = await fetch(
-        `${apiClient}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`
+        `${API_BASE}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`
       )
-      if (!response.ok) throw new Error('Report generation failed')
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('REPORT_NOT_FOUND')
+        if (response.status === 503 || response.status === 502) throw new Error('SERVICE_UNAVAILABLE')
+        throw new Error(`SERVER_ERROR_${response.status}`)
+      }
 
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
@@ -280,8 +285,6 @@ function App() {
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
-    } catch (err: any) {
-      setMessage(normalizeError(err))
     } finally {
       setIsGeneratingReport(false)
     }

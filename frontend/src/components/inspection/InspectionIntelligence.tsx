@@ -15,6 +15,7 @@ import type {
   PredictionResponse,
   InspectionRecord,
 } from '../../types'
+import PdfDownloadButton from '../ui/PdfDownloadButton'
 
 interface InspectionIntelligenceProps {
   activeTab: TabType
@@ -237,14 +238,19 @@ export const InspectionIntelligence: React.FC<InspectionIntelligenceProps> = ({
               <Eye size={16} /> View Report
             </button>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => (onDownloadPdf ? onDownloadPdf() : alert('PDF Report ready for download.'))}
-              style={{ fontSize: '0.85rem', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-            >
-              <Download size={16} /> Download PDF
-            </button>
+            <PdfDownloadButton
+              onDownload={async () => {
+                if (onDownloadPdf) {
+                  await onDownloadPdf()
+                } else {
+                  throw new Error('NO_INSPECTION_RUN')
+                }
+              }}
+              disabled={!hasActiveAnalysis}
+              disabledTooltip="No report available yet. Run an inspection to generate a report."
+              label="Download PDF Report"
+              style={{ width: '100%' }}
+            />
           </div>
         </div>
       </div>
@@ -294,9 +300,18 @@ export const InspectionIntelligence: React.FC<InspectionIntelligenceProps> = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setShowReportModal(false)}>Close</button>
-              <button type="button" className="btn btn-primary" onClick={() => { setShowReportModal(false); if (onDownloadPdf) onDownloadPdf() }}>
-                <Download size={14} /> Download PDF
-              </button>
+              <PdfDownloadButton
+                onDownload={async () => {
+                  if (onDownloadPdf) {
+                    await onDownloadPdf()
+                  } else {
+                    throw new Error('NO_INSPECTION_RUN')
+                  }
+                }}
+                disabled={!hasActiveAnalysis}
+                disabledTooltip="No report available yet. Run an inspection to generate a report."
+                label="Download PDF Report"
+              />
             </div>
           </div>
         </div>

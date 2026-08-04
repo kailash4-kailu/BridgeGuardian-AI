@@ -1,6 +1,7 @@
 import React from 'react'
 import { Upload, FileDown, Sparkles, RefreshCw, X, Image as ImageIcon, ShieldCheck, Camera, CheckCircle2 } from 'lucide-react'
 import StatusBadge from '../ui/StatusBadge'
+import PdfDownloadButton from '../ui/PdfDownloadButton'
 
 interface SingleVisionConsoleProps {
   visionImageId: string | null
@@ -171,16 +172,15 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
 
             {/* Structured Report & Export Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onDownloadReport}
-                disabled={isGeneratingReport}
+              <PdfDownloadButton
+                onDownload={async () => {
+                  await onDownloadReport()
+                }}
+                disabled={!visionPrediction}
+                disabledTooltip="Run single vision analysis to generate a PDF report."
+                label="Download PDF Inspection Report"
                 style={{ width: '100%' }}
-              >
-                <FileDown size={18} />
-                {isGeneratingReport ? 'Generating PDF Report...' : 'Download PDF Inspection Report'}
-              </button>
+              />
 
 
             </div>

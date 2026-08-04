@@ -4,6 +4,8 @@ import {
   Layers,
   AlertTriangle,
   FileDown,
+  FileSpreadsheet,
+  FileCode,
   Sparkles,
   RefreshCw,
   Search,
@@ -25,6 +27,7 @@ import {
 
 import { API_BASE, getStaticUrl } from '../lib/api'
 import { compressImageBatch } from '../lib/imageUtils'
+import PdfDownloadButton from './ui/PdfDownloadButton'
 
 type UploadedFile = {
   filename: string
@@ -151,21 +154,21 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
   const [uploadedList, setUploadedList] = useState<UploadedFile[]>([])
   const [inspectionId, setInspectionId] = useState<number | null>(null)
   const [record, setRecord] = useState<InspectionRecord | null>(null)
-  
+
   // UI filter and navigation state
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDefectCategory, setSelectedDefectCategory] = useState<string>('All')
-  
+
   // Visualizer overlay controls
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0)
   const [activeOverlay, setActiveOverlay] = useState<'original' | 'bboxes' | 'segmentation' | 'heatmap'>('segmentation')
-  
+
   // Modal for defect details
   const [selectedDefectModal, setSelectedDefectModal] = useState<DefectDetail | null>(null)
-  
+
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Auto-poll if inspection is running
@@ -174,7 +177,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
   useEffect(() => {
     if (inspectionId === null) return
     consecutiveErrorsRef.current = 0
-    
+
     const interval = setInterval(async () => {
       try {
         const response = await fetch(`${API_BASE}/inspection/${inspectionId}`)
@@ -185,13 +188,13 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
           }
           return
         }
-        
+
         consecutiveErrorsRef.current = 0
         setErrorMsg(null)
-        
+
         const data = (await response.json()) as InspectionRecord
         setRecord(data)
-        
+
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(interval)
           if (data.status === 'completed') {
@@ -204,7 +207,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
         setErrorMsg(err.message)
       }
     }, 2000)
-    
+
     return () => clearInterval(interval)
   }, [inspectionId, onCampaignComplete])
 
@@ -266,7 +269,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
     }
     setIsUploading(true)
     setErrorMsg(null)
-    
+
     try {
       const optimizedFiles = await compressImageBatch(selectedFiles, 1920, 1920, 0.85)
 
@@ -289,21 +292,21 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
         }
         throw new Error(detail)
       }
-      
+
       const filesData = (await uploadRes.json()) as UploadedFile[]
       setUploadedList(filesData)
-      
+
       const paths = filesData.map((f) => f.filepath)
       const inspectRes = await fetch(`${API_BASE}/inspection/run-inspection`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_paths: paths, pixel_to_mm: 0.5 }),
       })
-      
+
       if (!inspectRes.ok) {
         throw new Error('Could not trigger inspection task')
       }
-      
+
       const inspectData = await inspectRes.json()
       setInspectionId(inspectData.inspection_id)
     } catch (err: any) {
@@ -314,50 +317,57 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
   }
 
   const downloadReportPdf = async () => {
-    if (!inspectionId) return
-    try {
-      const res = await fetch(`${API_BASE}/inspection/${inspectionId}/report`)
-      if (!res.ok) throw new Error('PDF download failed')
-      
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Drone_Inspection_Report_#${inspectionId}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(url)
-    } catch (err: any) {
-      setErrorMsg(err.message)
+    if (!inspectionId) {
+      throw new Error('NO_INSPECTION_RUN')
     }
+
+    const res = await fetch(`${API_BASE}/inspection/report/${inspectionId}`)
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error('REPORT_NOT_FOUND')
+      }
+      if (res.status === 503 || res.status === 502) {
+        throw new Error('SERVICE_UNAVAILABLE')
+      }
+      throw new Error(`SERVER_ERROR_${res.status}`)
+    }
+
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Drone_Inspection_Report_#${inspectionId}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
   }
 
   // Filter defects list
   const filteredDefects = useMemo(() => {
     if (!record || !record.aggregate_results) return []
-    
+
     let list: DefectDetail[] = record.aggregate_results.defects || []
-    
+
     if (!list.length && record.aggregate_results.hierarchy) {
       list = Object.values(record.aggregate_results.hierarchy).flat()
     }
-    
+
     if (selectedComponent) {
       list = list.filter((d: DefectDetail) => d.component === selectedComponent)
     }
-    
+
     if (selectedDefectCategory !== 'All') {
       list = list.filter((d: DefectDetail) => d.type === selectedDefectCategory)
     }
-    
+
     if (searchTerm) {
       list = list.filter((d: DefectDetail) =>
         d.defect_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.type.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
-    
+
     return list
   }, [record, selectedComponent, selectedDefectCategory, searchTerm])
 
@@ -584,10 +594,12 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
                   <h2>Campaign Summary & Action Plan</h2>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button type="button" className="btn btn-primary" onClick={downloadReportPdf}>
-                    <FileDown size={18} /> Download PDF Report
-                  </button>
-
+                  <PdfDownloadButton
+                    onDownload={downloadReportPdf}
+                    disabled={!inspectionId || !record}
+                    disabledTooltip="Run a drone campaign inspection to generate a PDF report."
+                    label="Download PDF Report"
+                  />
                 </div>
               </div>
 
