@@ -34,8 +34,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'Structural Telemetry Console'
       case 'vision':
         return 'Single Image Computer Vision'
-      case 'diagnostics':
-        return 'System Diagnostics'
       default:
         return 'Inspection Overview'
     }
@@ -50,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="nav-breadcrumbs">
         <span>BridgeGuardian AI</span>
         <ChevronRight size={14} aria-hidden="true" />
-        <span>{activeTab === 'diagnostics' ? 'Infrastructure' : 'Asset Monitoring'}</span>
+        <span>Asset Monitoring</span>
         <ChevronRight size={14} aria-hidden="true" />
         <span className="active">{getTabLabel()}</span>
       </div>

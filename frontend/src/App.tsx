@@ -6,7 +6,6 @@ import Navbar from './components/layout/Navbar'
 import HeroHeader from './components/layout/HeroHeader'
 import TelemetryConsole from './components/telemetry/TelemetryConsole'
 import SingleVisionConsole from './components/vision/SingleVisionConsole'
-import SystemDiagnostics from './components/models/SystemDiagnostics'
 import InspectionIntelligence from './components/inspection/InspectionIntelligence'
 import DroneInspection from './components/DroneInspection'
 
@@ -358,7 +357,7 @@ function App() {
                 CRITICAL_PRESET={CRITICAL_PRESET}
               />
             </div>
-          ) : activeTab === 'vision' ? (
+          ) : (
             <div id="panel-vision" role="tabpanel" aria-labelledby="tab-vision">
               <SingleVisionConsole
                 visionImageId={visionImageId}
@@ -376,25 +375,19 @@ function App() {
                 onClearImage={clearImage}
               />
             </div>
-          ) : (
-            <div id="panel-diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics">
-              <SystemDiagnostics health={health} modelInfo={modelInfo} />
-            </div>
           )}
 
-          {activeTab !== 'diagnostics' && (
-            <InspectionIntelligence
-              activeTab={activeTab}
-              droneRecord={droneRecord}
-              telemetryPrediction={prediction}
-              visionPrediction={visionPrediction}
-              isAnalyzing={isGlobalAnalyzing}
-              onDownloadPdf={downloadReport}
-              onStartInspection={() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
-            />
-          )}
+          <InspectionIntelligence
+            activeTab={activeTab}
+            droneRecord={droneRecord}
+            telemetryPrediction={prediction}
+            visionPrediction={visionPrediction}
+            isAnalyzing={isGlobalAnalyzing}
+            onDownloadPdf={downloadReport}
+            onStartInspection={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+          />
         </section>
       </main>
     </>

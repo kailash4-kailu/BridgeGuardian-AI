@@ -70,7 +70,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
           <div style={{ width: '1px', height: '32px', background: 'rgba(255, 255, 255, 0.15)' }} />
           <div className="hero-stat-block">
             <span className="hero-stat-label">Est. RUL</span>
-            <span className="hero-stat-value" style={{ color: rulDays !== null ? 'var(--ink)' : 'var(--muted)' }}>
+            <span className="hero-stat-value" style={{ color: rulDays !== null ? 'var(--warning)' : 'var(--muted)' }}>
               {rulDays !== null ? `${formatNumber(rulDays, 0)} d` : '--'}
             </span>
           </div>

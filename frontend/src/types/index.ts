@@ -5,7 +5,7 @@
 
 export type ApiState = 'checking' | 'online' | 'degraded' | 'offline'
 
-export type TabType = 'drone' | 'console' | 'vision' | 'diagnostics'
+export type TabType = 'drone' | 'console' | 'vision'
 
 export interface PredictionHistoryItem {
   id: number
