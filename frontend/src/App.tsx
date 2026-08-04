@@ -302,17 +302,6 @@ function App() {
     void refreshSystem()
   }
 
-  const handleSelectHistoryItem = (item: PredictionHistoryItem) => {
-    if (item.analysis_type === 'drone_campaign') {
-      setActiveTab('drone')
-    } else if (item.analysis_type === 'single_image') {
-      setActiveTab('vision')
-    } else {
-      setActiveTab('console')
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   return (
     <>
       <SplashScreen />
@@ -397,12 +386,10 @@ function App() {
               telemetryPrediction={prediction}
               visionPrediction={visionPrediction}
               isAnalyzing={isGlobalAnalyzing}
-              historyItems={historyItems}
               onDownloadPdf={downloadReport}
               onStartInspection={() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
-              onSelectHistoryItem={handleSelectHistoryItem}
             />
           )}
         </section>
