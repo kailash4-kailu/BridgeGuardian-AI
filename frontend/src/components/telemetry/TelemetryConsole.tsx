@@ -189,7 +189,12 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
         />
         <MetricCard
           title="Prediction Confidence"
-          value={formatNumber(prediction?.prediction_confidence ?? 0.96, 1)}
+          value={formatNumber(
+            (prediction?.prediction_confidence ?? 0.96) <= 1
+              ? (prediction?.prediction_confidence ?? 0.96) * 100
+              : prediction?.prediction_confidence,
+            1
+          )}
           unit="%"
           trendLabel="RF / XGBoost Engine"
           trendTone="good"
