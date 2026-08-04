@@ -53,6 +53,14 @@ function compactDate(value: string) {
   }
 }
 
+function formatWorkflowLabel(type: string | null | undefined) {
+  if (!type) return 'Structural Health'
+  const val = type.toLowerCase()
+  if (val.includes('drone') || val.includes('campaign')) return 'Drone Campaign'
+  if (val.includes('single') || val.includes('image') || val.includes('vision')) return 'Single Image'
+  return 'Structural Health'
+}
+
 export const AuditTable: React.FC<AuditTableProps> = ({
   filteredHistory,
   paginatedHistory,
@@ -76,9 +84,9 @@ export const AuditTable: React.FC<AuditTableProps> = ({
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'All Workflows' },
-            { id: 'Drone Campaign', label: 'Drone Campaign' },
-            { id: 'Single Image', label: 'Single Image' },
-            { id: 'Structural Health', label: 'Structural Health' },
+            { id: 'drone_campaign', label: 'Drone Campaign' },
+            { id: 'single_image', label: 'Single Image' },
+            { id: 'structural_health', label: 'Structural Health' },
           ].map((chip) => (
             <button
               key={chip.id}
@@ -113,7 +121,7 @@ export const AuditTable: React.FC<AuditTableProps> = ({
                 <span>{compactDate(item.created_at)}</span>
                 <div>
                   <span className="workflow-tag" title={item.model_version || ''}>
-                    {item.analysis_type ?? 'Structural Health'}
+                    {formatWorkflowLabel(item.analysis_type)}
                   </span>
                 </div>
                 <strong style={{ fontSize: '0.95rem' }}>{formatNumber(item.health_score, 1)}</strong>

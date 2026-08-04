@@ -146,7 +146,7 @@ async def vision_predict(
             maintenance_recommendation=pred["maintenance_recommendation"],
             prediction_confidence=pred["prediction_confidence"],
             model_version=pred["model_version"],
-            analysis_type="Single Image",
+            analysis_type="single_image",
             status="completed",
         )
         db.add(record)

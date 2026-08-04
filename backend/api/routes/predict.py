@@ -74,7 +74,7 @@ async def predict(
             maintenance_recommendation=result.get("maintenance_recommendation"),
             prediction_confidence=result.get("prediction_confidence"),
             model_version=result.get("model_version"),
-            analysis_type="Structural Health",
+            analysis_type="structural_health",
             status="completed",
         )
         db.add(record)

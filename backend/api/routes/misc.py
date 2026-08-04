@@ -165,14 +165,13 @@ async def prediction_history(
         h_score = r.health_score * 100 if (r.health_score is not None and r.health_score <= 1.0) else r.health_score
         f_prob = r.failure_probability * 100 if (r.failure_probability is not None and r.failure_probability <= 1.0) else r.failure_probability
         
-        analysis_type = r.analysis_type
-        if not analysis_type:
-            if r.campaign_id:
-                analysis_type = "Drone Campaign"
-            elif "image_id" in (r.input_data or "") or "image_path" in (r.input_data or ""):
-                analysis_type = "Single Image"
-            else:
-                analysis_type = "Structural Health"
+        raw_type = (r.analysis_type or "").lower()
+        if "drone" in raw_type or "campaign" in raw_type or r.campaign_id:
+            norm_type = "drone_campaign"
+        elif "single" in raw_type or "vision" in raw_type or "image" in raw_type or ("image_id" in (r.input_data or "")):
+            norm_type = "single_image"
+        else:
+            norm_type = "structural_health"
 
         if r.campaign_id:
             seen_campaign_ids.add(r.campaign_id)
@@ -188,7 +187,7 @@ async def prediction_history(
                 maintenance_priority=r.maintenance_priority,
                 maintenance_recommendation=r.maintenance_recommendation,
                 model_version=r.model_version or "Vibration & Telemetry ML",
-                analysis_type=analysis_type,
+                analysis_type=norm_type,
                 campaign_id=r.campaign_id,
                 image_count=r.image_count,
                 status=r.status or "completed",
@@ -196,9 +195,13 @@ async def prediction_history(
             )
         )
 
-    # For backward compatibility: add any legacy InspectionRecords not already in PredictionRecords
+    # For backward compatibility: add any legacy completed InspectionRecords not already in PredictionRecords
     for i in inspection_records:
         if i.id in seen_campaign_ids:
+            continue
+
+        # Skip unstarted or incomplete background tasks without scores
+        if i.status in ("queued", "running") and i.health_score is None:
             continue
             
         h_score = i.health_score * 100 if (i.health_score is not None and i.health_score <= 1.0) else i.health_score
@@ -222,7 +225,7 @@ async def prediction_history(
                 maintenance_priority=i.maintenance_priority,
                 maintenance_recommendation=i.maintenance_action,
                 model_version="Drone Campaign YOLOv11/SAM2",
-                analysis_type="Drone Campaign",
+                analysis_type="drone_campaign",
                 campaign_id=i.id,
                 image_count=img_count,
                 status=i.status or "completed",

@@ -251,14 +251,19 @@ class CampaignInspectionPipeline:
                 from backend.core.models import PredictionRecord
                 h_val = float(health_predictions["health_score"])
                 f_val = float(health_predictions["failure_probability"])
+                input_snapshot = json.dumps({"campaign_id": inspection_id, "image_count": total_imgs})
                 
                 # Check if PredictionRecord already exists for this campaign_id
                 pred_rec = db.query(PredictionRecord).filter(PredictionRecord.campaign_id == inspection_id).first()
                 if not pred_rec:
-                    pred_rec = PredictionRecord(campaign_id=inspection_id)
+                    pred_rec = PredictionRecord(
+                        campaign_id=inspection_id,
+                        input_data=input_snapshot,
+                        analysis_type="drone_campaign"
+                    )
                     db.add(pred_rec)
 
-                pred_rec.input_data = json.dumps({"campaign_id": inspection_id, "image_count": total_imgs})
+                pred_rec.input_data = input_snapshot
                 pred_rec.health_score = h_val
                 pred_rec.failure_probability = f_val
                 pred_rec.rul_days = float(health_predictions["rul_days"])
@@ -267,12 +272,13 @@ class CampaignInspectionPipeline:
                 pred_rec.maintenance_recommendation = str(maintenance_plan["maintenance_action"])
                 pred_rec.prediction_confidence = float(health_predictions.get("prediction_confidence", 0.95))
                 pred_rec.model_version = "YOLOv11 / SAM2 Drone Campaign"
-                pred_rec.analysis_type = "Drone Campaign"
+                pred_rec.analysis_type = "drone_campaign"
                 pred_rec.image_count = total_imgs
                 pred_rec.summary_report = str(explainability_res.get("summary_report", ""))
                 pred_rec.status = "completed"
             except Exception as p_err:
-                logger.warning(f"Could not persist PredictionRecord for campaign #{inspection_id}: {p_err}")
+                logger.error(f"Could not persist PredictionRecord for campaign #{inspection_id}: {p_err}", exc_info=True)
+                db.rollback()
 
             db.commit()
             logger.info(f"Campaign campaign_id={inspection_id} completed successfully in {duration:.2f}s")

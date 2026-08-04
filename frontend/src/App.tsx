@@ -232,15 +232,28 @@ function App() {
 
   const filteredHistory = useMemo(() => {
     return history.filter((item) => {
-      const matchType =
-        historyFilter === 'all' ||
-        (item.analysis_type || '').toLowerCase().includes(historyFilter.toLowerCase())
+      const typeLower = (item.analysis_type || 'structural_health').toLowerCase()
+      const filterLower = historyFilter.toLowerCase()
+
+      let matchType = false
+      if (filterLower === 'all') {
+        matchType = true
+      } else if (filterLower.includes('drone') || filterLower.includes('campaign')) {
+        matchType = typeLower.includes('drone') || typeLower.includes('campaign')
+      } else if (filterLower.includes('single') || filterLower.includes('image') || filterLower.includes('vision')) {
+        matchType = typeLower.includes('single') || typeLower.includes('image') || typeLower.includes('vision')
+      } else if (filterLower.includes('structural') || filterLower.includes('health')) {
+        matchType = typeLower.includes('structural') || typeLower.includes('health') || typeLower === ''
+      } else {
+        matchType = typeLower.includes(filterLower)
+      }
+
       const searchLower = historySearch.toLowerCase()
       const matchSearch =
         !historySearch ||
         String(item.id).includes(searchLower) ||
         (item.model_version || '').toLowerCase().includes(searchLower) ||
-        (item.analysis_type || '').toLowerCase().includes(searchLower) ||
+        typeLower.includes(searchLower) ||
         (item.risk_category || '').toLowerCase().includes(searchLower)
       return matchType && matchSearch
     })
