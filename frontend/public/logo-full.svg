@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 400" width="1350" height="400">
   <defs>
     <!-- Background Tech Dark Blue Gradient -->
     <linearGradient id="fullBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -33,16 +33,16 @@
     </filter>
   </defs>
 
-  <!-- Optional Dark Blue Tech Pattern Background -->
-  <rect width="1200" height="400" rx="24" fill="url(#fullBgGrad)"/>
+  <!-- Dark Blue Tech Pattern Background -->
+  <rect width="1350" height="400" rx="24" fill="url(#fullBgGrad)"/>
 
   <!-- Subtle Tech Grid Lines in Background -->
-  <path d="M 0 100 H 1200 M 0 200 H 1200 M 0 300 H 1200" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.07"/>
-  <path d="M 300 0 V 400 M 600 0 V 400 M 900 0 V 400" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.07"/>
+  <path d="M 0 100 H 1350 M 0 200 H 1350 M 0 300 H 1350" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.07"/>
+  <path d="M 337 0 V 400 M 675 0 V 400 M 1012 0 V 400" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.07"/>
 
-  <!-- Background Bridge Silhouette Grid Wireframe (Optional Aesthetic Accent) -->
-  <path d="M 0 360 Q 600 180 1200 360" fill="none" stroke="#0070F3" stroke-width="2" stroke-opacity="0.15"/>
-  <path d="M 0 380 Q 600 240 1200 380" fill="none" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.1"/>
+  <!-- Background Bridge Silhouette Grid Wireframe Accent -->
+  <path d="M 0 360 Q 675 180 1350 360" fill="none" stroke="#0070F3" stroke-width="2" stroke-opacity="0.15"/>
+  <path d="M 0 380 Q 675 240 1350 380" fill="none" stroke="#00D2FF" stroke-width="1" stroke-opacity="0.1"/>
 
   <!-- LEFT: SHIELD LOGO ICON -->
   <g transform="translate(60, 30) scale(0.72)">
@@ -130,15 +130,15 @@
     <text x="0" y="0" 
           font-family="Inter, system-ui, -apple-system, Roboto, sans-serif" 
           font-weight="800" 
-          font-size="115" 
+          font-size="110" 
           fill="#FFFFFF" 
           letter-spacing="-1.5">Bridge</text>
     
     <!-- "Guardian" text in Electric Cyan/Blue -->
-    <text x="365" y="0" 
+    <text x="350" y="0" 
           font-family="Inter, system-ui, -apple-system, Roboto, sans-serif" 
           font-weight="700" 
-          font-size="115" 
+          font-size="110" 
           fill="url(#textGuardianGrad)" 
           letter-spacing="-1.5">Guardian</text>
           
@@ -146,8 +146,8 @@
     <text x="5" y="52" 
           font-family="Inter, system-ui, -apple-system, Roboto, sans-serif" 
           font-weight="600" 
-          font-size="28" 
+          font-size="27" 
           fill="#64748B" 
-          letter-spacing="6.5">EXPLAINABLE PREDICTIVE MAINTENANCE</text>
+          letter-spacing="5.5">EXPLAINABLE PREDICTIVE MAINTENANCE</text>
   </g>
 </svg>
