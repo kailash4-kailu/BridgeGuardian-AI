@@ -8,6 +8,9 @@ interface HeroHeaderProps {
   riskCategory: string | null
   dbConnected?: boolean
   featureCount?: number
+  isAnalyzing?: boolean
+  predictionStatusLabel?: string | null
+  isCached?: boolean
 }
 
 function formatNumber(val: number | null | undefined, digits = 1) {
@@ -25,7 +28,12 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
   riskCategory,
   dbConnected = true,
   featureCount = 42,
+  isAnalyzing = false,
+  predictionStatusLabel,
+  isCached = false,
 }) => {
+  const hasAnalysis = healthScore !== null || failureProbability !== null || rulDays !== null
+
   return (
     <div className="enterprise-hero">
       <div className="hero-content-wrapper">
@@ -39,31 +47,31 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
             <span>|</span>
             <span>Database: {dbConnected ? 'Connected' : 'Offline'}</span>
             <span>|</span>
-            <span>Multi-Sensor Telemetry Analysis</span>
-            <span>|</span>
-            <span>Computer Vision Inspection Service</span>
+            <span>
+              Prediction: {isAnalyzing ? 'Running AI Analysis...' : hasAnalysis ? (isCached ? `Last Analysis (${predictionStatusLabel || 'Saved Session'})` : `Live Prediction (${riskCategory || 'Complete'})`) : 'Awaiting Analysis'}
+            </span>
           </p>
         </div>
 
         <div className="hero-metrics-pill-bar">
           <div className="hero-stat-block">
             <span className="hero-stat-label">Health Index (SHI)</span>
-            <span className="hero-stat-value" style={{ color: 'var(--primary)' }}>
-              {formatNumber(healthScore, 1)} / 100
+            <span className="hero-stat-value" style={{ color: healthScore !== null ? 'var(--primary)' : 'var(--muted)' }}>
+              {healthScore !== null ? `${formatNumber(healthScore, 1)} / 100` : '--'}
             </span>
           </div>
           <div style={{ width: '1px', height: '32px', background: 'rgba(255, 255, 255, 0.15)' }} />
           <div className="hero-stat-block">
             <span className="hero-stat-label">Failure Prob (PoF)</span>
-            <span className="hero-stat-value" style={{ color: 'var(--success)' }}>
-              {formatNumber(failureProbability, 2)}%
+            <span className="hero-stat-value" style={{ color: failureProbability !== null ? 'var(--success)' : 'var(--muted)' }}>
+              {failureProbability !== null ? `${formatNumber(failureProbability, 2)}%` : '--'}
             </span>
           </div>
           <div style={{ width: '1px', height: '32px', background: 'rgba(255, 255, 255, 0.15)' }} />
           <div className="hero-stat-block">
             <span className="hero-stat-label">Est. RUL</span>
-            <span className="hero-stat-value">
-              {formatNumber(rulDays, 0)} d
+            <span className="hero-stat-value" style={{ color: rulDays !== null ? 'var(--ink)' : 'var(--muted)' }}>
+              {rulDays !== null ? `${formatNumber(rulDays, 0)} d` : '--'}
             </span>
           </div>
         </div>

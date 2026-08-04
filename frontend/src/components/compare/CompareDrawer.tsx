@@ -39,17 +39,19 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
 }) => {
   if (!isOpen) return null
 
-  const shiA = runA?.health_score ?? 85.8
-  const shiB = runB?.health_score ?? 81.6
-  const shiDelta = shiB - shiA
+  if (!isOpen) return null
 
-  const pofA = runA?.failure_probability ?? 2.42
-  const pofB = runB?.failure_probability ?? 3.49
-  const pofDelta = pofB - pofA
+  const shiA = runA?.health_score ?? null
+  const shiB = runB?.health_score ?? null
+  const shiDelta = shiA !== null && shiB !== null ? shiB - shiA : null
 
-  const rulA = runA?.rul_days ?? 183.0
-  const rulB = runB?.rul_days ?? 120.0
-  const rulDelta = rulB - rulA
+  const pofA = runA?.failure_probability ?? null
+  const pofB = runB?.failure_probability ?? null
+  const pofDelta = pofA !== null && pofB !== null ? pofB - pofA : null
+
+  const rulA = runA?.rul_days ?? null
+  const rulB = runB?.rul_days ?? null
+  const rulDelta = rulA !== null && rulB !== null ? rulB - rulA : null
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', justifyContent: 'flex-end', background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }}>
@@ -74,7 +76,7 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
                 {formatNumber(shiA, 1)} <small style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>SHI</small>
               </div>
-              <StatusBadge status={runA?.risk_category ?? 'Good'} />
+              <StatusBadge status={runA?.risk_category ?? 'Awaiting Analysis'} />
             </div>
 
             <div style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-line)' }}>
@@ -82,7 +84,7 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
                 {formatNumber(shiB, 1)} <small style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>SHI</small>
               </div>
-              <StatusBadge status={runB?.risk_category ?? 'Good'} />
+              <StatusBadge status={runB?.risk_category ?? 'Awaiting Analysis'} />
             </div>
           </div>
 
@@ -97,33 +99,45 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
                   <span>{formatNumber(shiA, 1)}</span>
                   <ArrowRight size={14} style={{ color: 'var(--muted)' }} />
                   <strong>{formatNumber(shiB, 1)}</strong>
-                  <span className={`badge ${shiDelta >= 0 ? 'badge-good' : 'badge-danger'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
-                    {shiDelta >= 0 ? '+' : ''}{formatNumber(shiDelta, 1)}
-                  </span>
+                  {shiDelta !== null ? (
+                    <span className={`badge ${shiDelta >= 0 ? 'badge-good' : 'badge-danger'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
+                      {shiDelta >= 0 ? '+' : ''}{formatNumber(shiDelta, 1)}
+                    </span>
+                  ) : (
+                    <span className="badge badge-neutral" style={{ padding: '2px 8px', fontSize: '0.75rem' }}>--</span>
+                  )}
                 </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', fontSize: '0.88rem' }}>
                 <span>Failure Probability (PoF)</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{formatNumber(pofA, 2)}%</span>
+                  <span>{pofA !== null ? `${formatNumber(pofA, 2)}%` : '--'}</span>
                   <ArrowRight size={14} style={{ color: 'var(--muted)' }} />
-                  <strong>{formatNumber(pofB, 2)}%</strong>
-                  <span className={`badge ${pofDelta <= 0 ? 'badge-good' : 'badge-danger'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
-                    {pofDelta >= 0 ? '+' : ''}{formatNumber(pofDelta, 2)}%
-                  </span>
+                  <strong>{pofB !== null ? `${formatNumber(pofB, 2)}%` : '--'}</strong>
+                  {pofDelta !== null ? (
+                    <span className={`badge ${pofDelta <= 0 ? 'badge-good' : 'badge-danger'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
+                      {pofDelta >= 0 ? '+' : ''}{formatNumber(pofDelta, 2)}%
+                    </span>
+                  ) : (
+                    <span className="badge badge-neutral" style={{ padding: '2px 8px', fontSize: '0.75rem' }}>--</span>
+                  )}
                 </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', fontSize: '0.88rem' }}>
                 <span>Remaining Useful Life (RUL)</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>{formatNumber(rulA, 0)} d</span>
+                  <span>{rulA !== null ? `${formatNumber(rulA, 0)} d` : '--'}</span>
                   <ArrowRight size={14} style={{ color: 'var(--muted)' }} />
-                  <strong>{formatNumber(rulB, 0)} d</strong>
-                  <span className={`badge ${rulDelta >= 0 ? 'badge-good' : 'badge-warning'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
-                    {rulDelta >= 0 ? '+' : ''}{formatNumber(rulDelta, 0)} d
-                  </span>
+                  <strong>{rulB !== null ? `${formatNumber(rulB, 0)} d` : '--'}</strong>
+                  {rulDelta !== null ? (
+                    <span className={`badge ${rulDelta >= 0 ? 'badge-good' : 'badge-warning'}`} style={{ padding: '2px 8px', fontSize: '0.75rem' }}>
+                      {rulDelta >= 0 ? '+' : ''}{formatNumber(rulDelta, 0)} d
+                    </span>
+                  ) : (
+                    <span className="badge badge-neutral" style={{ padding: '2px 8px', fontSize: '0.75rem' }}>--</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -135,11 +149,11 @@ export const CompareDrawer: React.FC<CompareDrawerProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
               <div>
                 <span style={{ color: 'var(--muted)', fontWeight: 600 }}>{labelA}:</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 700 }}>{runA?.maintenance_priority ?? 'Routine Monitoring (Next inspection: 180d)'}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 700 }}>{runA?.maintenance_priority ?? 'No Baseline Analysis'}</p>
               </div>
               <div style={{ borderTop: '1px solid var(--border-line)', paddingTop: '10px' }}>
                 <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{labelB}:</span>
-                <p style={{ margin: '4px 0 0', fontWeight: 700 }}>{runB?.maintenance_priority ?? 'Routine Monitoring (Next inspection: 180d)'}</p>
+                <p style={{ margin: '4px 0 0', fontWeight: 700 }}>{runB?.maintenance_priority ?? 'Awaiting Analysis'}</p>
               </div>
             </div>
           </div>

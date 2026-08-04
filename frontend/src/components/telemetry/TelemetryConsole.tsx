@@ -230,9 +230,14 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
   const validationError = useMemo(() => getValidationError(form), [form])
   const visibleFields = SENSOR_FIELDS.filter((f) => f.group === activeGroup)
 
-  const healthScore = prediction?.health_score ?? latestHistory?.health_score ?? 85.8
-  const pofValue = prediction?.failure_probability ?? latestHistory?.failure_probability ?? 2.42
-  const rulValue = prediction?.rul_days ?? latestHistory?.rul_days ?? 182.7
+  const healthScore = prediction?.health_score ?? null
+  const pofValue = prediction?.failure_probability ?? null
+  const rulValue = prediction?.rul_days ?? null
+  const confidenceValue = prediction
+    ? (prediction.prediction_confidence <= 1
+        ? prediction.prediction_confidence * 100
+        : prediction.prediction_confidence)
+    : null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -251,41 +256,49 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
         <MetricCard
           title="Structural Health Index"
           value={formatNumber(healthScore, 1)}
-          unit="/ 100"
-          trendLabel="Optimal Integrity"
-          trendTone="good"
+          unit={healthScore !== null ? '/ 100' : undefined}
+          trendLabel={healthScore !== null ? (healthScore < 50 ? 'Critical Distress' : healthScore < 70 ? 'Moderate Risk' : 'Optimal Integrity') : 'Awaiting Analysis'}
+          trendTone={healthScore !== null ? (healthScore < 50 ? 'danger' : healthScore < 70 ? 'warning' : 'good') : 'neutral'}
           icon={CircleGauge}
         />
         <MetricCard
           title="Failure Probability"
           value={formatNumber(pofValue, 2)}
-          unit="%"
-          trendLabel="Low Risk"
-          trendTone="good"
+          unit={pofValue !== null ? '%' : undefined}
+          trendLabel={pofValue !== null ? (pofValue > 10 ? 'High Risk' : 'Low Risk') : 'Awaiting Analysis'}
+          trendTone={pofValue !== null ? (pofValue > 10 ? 'danger' : 'good') : 'neutral'}
           icon={BarChart3}
         />
         <MetricCard
           title="Remaining Useful Life"
           value={formatNumber(rulValue, 0)}
-          unit="Days"
-          trendLabel="Target Life"
-          trendTone="warning"
+          unit={rulValue !== null ? 'Days' : undefined}
+          trendLabel={rulValue !== null ? 'Calibrated Model' : 'Awaiting Analysis'}
+          trendTone={rulValue !== null ? 'warning' : 'neutral'}
           icon={HistoryIcon}
         />
         <MetricCard
           title="Prediction Confidence"
-          value={formatNumber(
-            (prediction?.prediction_confidence ?? 0.96) <= 1
-              ? (prediction?.prediction_confidence ?? 0.96) * 100
-              : prediction?.prediction_confidence,
-            1
-          )}
-          unit="%"
-          trendLabel="Predictive Analytics"
-          trendTone="good"
+          value={formatNumber(confidenceValue, 1)}
+          unit={confidenceValue !== null ? '%' : undefined}
+          trendLabel={confidenceValue !== null ? 'Predictive Analytics' : 'Awaiting Analysis'}
+          trendTone={confidenceValue !== null ? 'good' : 'neutral'}
           icon={Sparkles}
         />
       </div>
+
+      {/* Inference Loading Banner */}
+      {isPredicting && (
+        <div className="banner" role="status" style={{ background: 'var(--surface-alt)', borderLeft: '4px solid var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <RefreshCw size={20} className="spinning" style={{ color: 'var(--primary)' }} />
+          <div>
+            <strong>Running AI Analysis...</strong>
+            <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '2px' }}>
+              Calculating Structural Health Index • Estimating Failure Probability • Computing Remaining Useful Life • Generating Recommendation
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Validation Error Banner */}
       {validationError && (
@@ -417,11 +430,15 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
           {/* Executive Engineering Insight */}
           <div style={{ padding: '14px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--primary)', marginBottom: '20px', fontSize: '0.85rem', lineHeight: 1.5 }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Executive Engineering Directive</span>
-            {healthScore < 50 || (prediction?.risk_category === 'Critical')
-              ? 'CRITICAL WARNING: Accelerated structural deterioration detected. Immediate physical engineering inspection required. Recommend heavy vehicle traffic restrictions within 14 days.'
-              : healthScore < 70 || (prediction?.risk_category === 'Poor')
-              ? 'ATTENTION REQUIRED: Moderate structural distress observed. Schedule detailed engineering assessment within 30 days.'
-              : 'OPTIMAL INTEGRITY: Structural health parameters are within normal baseline tolerances. Schedule routine inspection in 180 days.'}
+            {prediction ? (
+              (healthScore !== null && healthScore < 50) || prediction.risk_category === 'Critical'
+                ? 'CRITICAL WARNING: Accelerated structural deterioration detected. Immediate physical engineering inspection required. Recommend heavy vehicle traffic restrictions within 14 days.'
+                : (healthScore !== null && healthScore < 70) || prediction.risk_category === 'Poor'
+                ? 'ATTENTION REQUIRED: Moderate structural distress observed. Schedule detailed engineering assessment within 30 days.'
+                : 'OPTIMAL INTEGRITY: Structural health parameters are within normal baseline tolerances. Schedule routine inspection in 180 days.'
+            ) : (
+              'AWAITING ANALYSIS: No telemetry prediction has been generated yet. Configure sensor parameters on the left and click "Run Telemetry AI Prediction" to execute inference.'
+            )}
           </div>
 
           {/* Structured Exports */}

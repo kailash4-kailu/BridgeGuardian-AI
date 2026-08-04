@@ -111,7 +111,34 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
 
-  const healthScore = prediction?.health_score ?? 85.8
+  // Active Drone Campaign Record for Hero Header
+  const [droneRecord, setDroneRecord] = useState<any | null>(null)
+
+  const activeHealthScore =
+    prediction?.health_score ??
+    visionPrediction?.predictions?.health_score ??
+    droneRecord?.health_score ??
+    null
+
+  const activeFailureProbability =
+    prediction?.failure_probability ??
+    visionPrediction?.predictions?.failure_probability ??
+    droneRecord?.failure_probability ??
+    null
+
+  const activeRulDays =
+    prediction?.rul_days ??
+    visionPrediction?.predictions?.rul_days ??
+    droneRecord?.rul_days ??
+    null
+
+  const activeRiskCategory =
+    prediction?.risk_category ??
+    visionPrediction?.predictions?.risk_category ??
+    droneRecord?.risk_category ??
+    null
+
+  const isGlobalAnalyzing = isPredicting || isAnalyzing
 
   const refreshSystem = useCallback(async () => {
     setIsRefreshing(true)
@@ -261,6 +288,13 @@ function App() {
     setActiveOverlay('original')
   }
 
+  const handleDroneCampaignComplete = (record?: any) => {
+    if (record) {
+      setDroneRecord(record)
+    }
+    void refreshSystem()
+  }
+
   return (
     <>
       <SplashScreen />
@@ -283,48 +317,55 @@ function App() {
           )}
 
           <HeroHeader
-            healthScore={healthScore}
-            failureProbability={prediction?.failure_probability ?? 2.42}
-            rulDays={prediction?.rul_days ?? 182.7}
-            riskCategory={prediction?.risk_category ?? 'Good'}
+            healthScore={activeHealthScore}
+            failureProbability={activeFailureProbability}
+            rulDays={activeRulDays}
+            riskCategory={activeRiskCategory}
             dbConnected={health?.database_ok}
             featureCount={modelInfo?.feature_count}
+            isAnalyzing={isGlobalAnalyzing}
           />
 
           {activeTab === 'drone' ? (
-            <DroneInspection onCampaignComplete={refreshSystem} />
+            <div id="panel-drone" role="tabpanel" aria-labelledby="tab-drone">
+              <DroneInspection onCampaignComplete={handleDroneCampaignComplete} />
+            </div>
           ) : activeTab === 'console' ? (
-            <TelemetryConsole
-              form={form}
-              onFieldChange={updateField}
-              onRunPrediction={runPrediction}
-              onExplainPrediction={explainPrediction}
-              onReset={resetSample}
-              onApplyPreset={applyPreset}
-              prediction={prediction}
-              explanation={explanation}
-              isPredicting={isPredicting}
-              isExplaining={isExplaining}
-              latestHistory={null}
-              DEFAULT_INPUT={DEFAULT_INPUT}
-              CRITICAL_PRESET={CRITICAL_PRESET}
-            />
+            <div id="panel-console" role="tabpanel" aria-labelledby="tab-console">
+              <TelemetryConsole
+                form={form}
+                onFieldChange={updateField}
+                onRunPrediction={runPrediction}
+                onExplainPrediction={explainPrediction}
+                onReset={resetSample}
+                onApplyPreset={applyPreset}
+                prediction={prediction}
+                explanation={explanation}
+                isPredicting={isPredicting}
+                isExplaining={isExplaining}
+                latestHistory={null}
+                DEFAULT_INPUT={DEFAULT_INPUT}
+                CRITICAL_PRESET={CRITICAL_PRESET}
+              />
+            </div>
           ) : (
-            <SingleVisionConsole
-              visionImageId={visionImageId}
-              visionImageUrl={visionImageUrl}
-              visionFilename={visionFilename}
-              visionPrediction={visionPrediction}
-              activeOverlay={activeOverlay}
-              setActiveOverlay={setActiveOverlay}
-              isUploading={isUploading}
-              isAnalyzing={isAnalyzing}
-              isGeneratingReport={isGeneratingReport}
-              onImageUpload={handleImageUpload}
-              onRunVisionPredict={runVisionPredict}
-              onDownloadReport={downloadReport}
-              onClearImage={clearImage}
-            />
+            <div id="panel-vision" role="tabpanel" aria-labelledby="tab-vision">
+              <SingleVisionConsole
+                visionImageId={visionImageId}
+                visionImageUrl={visionImageUrl}
+                visionFilename={visionFilename}
+                visionPrediction={visionPrediction}
+                activeOverlay={activeOverlay}
+                setActiveOverlay={setActiveOverlay}
+                isUploading={isUploading}
+                isAnalyzing={isAnalyzing}
+                isGeneratingReport={isGeneratingReport}
+                onImageUpload={handleImageUpload}
+                onRunVisionPredict={runVisionPredict}
+                onDownloadReport={downloadReport}
+                onClearImage={clearImage}
+              />
+            </div>
           )}
 
           <ModelInventory health={health} modelInfo={modelInfo} />

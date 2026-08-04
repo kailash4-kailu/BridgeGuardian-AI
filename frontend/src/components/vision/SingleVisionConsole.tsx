@@ -108,14 +108,17 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
           <div>
             <div style={{ position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-line)', minHeight: '360px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {isAnalyzing ? (
-                <div style={{ textAlign: 'center', color: '#FFF', padding: '40px' }}>
-                  <RefreshCw size={40} className="spinning" style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-                  <h3>Running Computer Vision Defect Analysis...</h3>
+                <div style={{ textAlign: 'center', color: '#FFF', padding: '48px 24px' }}>
+                  <RefreshCw size={44} className="spinning" style={{ color: 'var(--primary)', marginBottom: '16px' }} />
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 8px' }}>Running Computer Vision AI Analysis...</h3>
+                  <p style={{ fontSize: '0.88rem', color: '#94A3B8', margin: 0 }}>
+                    Extracting structural surface defect features • Segmenting damage masks • Estimating Failure Probability
+                  </p>
                 </div>
               ) : (
                 <img
                   src={visionPrediction ? visionPrediction.visualizations[activeOverlay] : visionImageUrl || ''}
-                  alt={visionFilename || 'Bridge Inspection'}
+                  alt={visionFilename || 'Bridge Inspection Photo'}
                   style={{ maxWidth: '100%', maxHeight: '520px', objectFit: 'contain' }}
                 />
               )}
@@ -125,13 +128,13 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
               <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary btn-pulse"
                   onClick={onRunVisionPredict}
                   disabled={isAnalyzing}
-                  style={{ padding: '12px 28px' }}
+                  style={{ padding: '12px 32px', fontSize: '0.95rem' }}
                 >
                   <Sparkles size={18} />
-                  {isAnalyzing ? 'Analyzing Image...' : 'Run Vision Defect Analysis'}
+                  {isAnalyzing ? 'Executing Vision Model...' : 'Run Vision Defect Analysis'}
                 </button>
               </div>
             ) : (
@@ -147,7 +150,7 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
                     type="button"
                     className={`btn ${activeOverlay === ov.key ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setActiveOverlay(ov.key)}
-                    style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                    style={{ padding: '6px 16px', fontSize: '0.82rem' }}
                   >
                     {ov.label}
                   </button>
@@ -172,20 +175,21 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
             <div style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-line)' }}>
               <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Structural Health Score</span>
               <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
-                {formatNumber(visionPrediction.predictions.health_score, 1)} / 100
+                {formatNumber(visionPrediction.predictions?.health_score, 1)} / 100
               </div>
-              <StatusBadge status={visionPrediction.predictions.risk_category} />
+              <StatusBadge status={visionPrediction.predictions?.risk_category || 'Analyzed'} />
             </div>
 
-            {/* Measurable Image Quality Assessment */}
+            {/* Measurable Image Quality & Extraction Assessment */}
             <div style={{ padding: '14px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Image Quality Score</span>
-                <StatusBadge status="Optimal" tone="good" />
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Vision Feature Extraction</span>
+                <StatusBadge status="Completed" tone="good" />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--ink-subtle)' }}>
-                <span>Sharpness (Laplacian Var): <strong>312.4</strong></span>
-                <span>Contrast: <strong>High</strong></span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.82rem', color: 'var(--ink-subtle)' }}>
+                <span>Failure Probability: <strong>{formatNumber(visionPrediction.predictions?.failure_probability, 2)}%</strong></span>
+                <span>Est. RUL: <strong>{formatNumber(visionPrediction.predictions?.rul_days, 0)} days</strong></span>
+                <span>Priority: <strong>{visionPrediction.predictions?.maintenance_priority || 'Routine'}</strong></span>
               </div>
             </div>
 
@@ -224,21 +228,37 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
 
             {/* Defect Cards Grid */}
             <div style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '0.88rem' }}>Detected Defect Classification</h4>
+              <h4 style={{ margin: '0 0 12px', fontSize: '0.88rem' }}>Detected Visual Features</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[
-                  { type: 'Concrete Surface Cracking', severity: 'Moderate', detail: `Density: ${visionPrediction.features.crack_density}% | Max Width: ${visionPrediction.features.crack_width} mm` },
-                  { type: 'Steel Element Corrosion', severity: 'Low', detail: `Affected Area: ${visionPrediction.features.corrosion_percent}%` },
-                  { type: 'Concrete Spalling', severity: 'Minor', detail: `Surface Spalling: ${visionPrediction.features.spalling_percent}%` },
-                ].map((defect) => (
-                  <div key={defect.type} style={{ padding: '10px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-line)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <strong style={{ fontSize: '0.85rem' }}>{defect.type}</strong>
-                      <StatusBadge status={defect.severity} />
+                {visionPrediction.features ? (
+                  [
+                    {
+                      type: 'Concrete Cracking',
+                      severity: (visionPrediction.features.crack_density ?? 0) > 5 ? 'High' : (visionPrediction.features.crack_density ?? 0) > 1 ? 'Moderate' : 'Low',
+                      detail: `Density: ${formatNumber(visionPrediction.features.crack_density, 2)}% | Max Width: ${formatNumber(visionPrediction.features.max_crack_width, 2)} mm`
+                    },
+                    {
+                      type: 'Surface Corrosion',
+                      severity: (visionPrediction.features.corrosion_percent ?? 0) > 5 ? 'Moderate' : 'Low',
+                      detail: `Affected Area: ${formatNumber(visionPrediction.features.corrosion_percent, 2)}%`
+                    },
+                    {
+                      type: 'Concrete Spalling',
+                      severity: (visionPrediction.features.spalling_percent ?? 0) > 3 ? 'Moderate' : 'Low',
+                      detail: `Surface Spalling: ${formatNumber(visionPrediction.features.spalling_percent, 2)}%`
+                    }
+                  ].map((defect) => (
+                    <div key={defect.type} style={{ padding: '10px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-line)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <strong style={{ fontSize: '0.85rem' }}>{defect.type}</strong>
+                        <StatusBadge status={defect.severity} />
+                      </div>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{defect.detail}</span>
                     </div>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{defect.detail}</span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>No visual defect features extracted.</span>
+                )}
               </div>
             </div>
           </div>

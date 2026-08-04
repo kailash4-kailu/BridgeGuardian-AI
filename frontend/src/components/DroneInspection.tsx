@@ -4,6 +4,8 @@ import {
   Layers,
   AlertTriangle,
   FileDown,
+  FileSpreadsheet,
+  FileCode,
   Sparkles,
   RefreshCw,
   Search,
@@ -142,7 +144,33 @@ type InspectionRecord = {
   } | null
 }
 
-export default function DroneInspection({ onCampaignComplete }: { onCampaignComplete?: () => void }) {
+function downloadCsv(data: Record<string, any>, filename: string) {
+  const keys = Object.keys(data)
+  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
+  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement('a')
+  link.setAttribute('href', encodedUri)
+  link.setAttribute('download', `${filename}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+function downloadJson(data: object, filename: string) {
+  const jsonStr = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+export default function DroneInspection({ onCampaignComplete }: { onCampaignComplete?: (record?: any) => void }) {
   // Upload and queue state
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
@@ -193,7 +221,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
         if (data.status === 'completed' || data.status === 'failed') {
           clearInterval(interval)
           if (data.status === 'completed') {
-            onCampaignComplete?.()
+            onCampaignComplete?.(data)
           } else if (data.status === 'failed') {
             setErrorMsg(data.summary_report || 'Campaign inspection failed on backend server.')
           }
@@ -581,9 +609,31 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
                   <p className="eyebrow">AI Executive Narrative</p>
                   <h2>Campaign Summary & Action Plan</h2>
                 </div>
-                <button type="button" className="btn btn-primary" onClick={downloadReportPdf}>
-                  <FileDown size={18} /> Download PDF Report
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-primary" onClick={downloadReportPdf}>
+                    <FileDown size={18} /> Download PDF Report
+                  </button>
+                  {record.aggregate_results && (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => downloadCsv(record.aggregate_results || {}, `Drone_Campaign_${inspectionId}`)}
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      >
+                        <FileSpreadsheet size={14} /> Export CSV
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => downloadJson(record, `Drone_Campaign_${inspectionId}`)}
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      >
+                        <FileCode size={14} /> Export JSON
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <p style={{ fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--ink-subtle)', background: 'var(--surface-alt)', padding: '16px 20px', borderRadius: 'var(--radius-md)', margin: '0 0 20px' }}>
