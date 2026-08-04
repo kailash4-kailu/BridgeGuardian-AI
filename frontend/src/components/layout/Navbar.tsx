@@ -1,6 +1,7 @@
 import React from 'react'
-import { ChevronRight, Search, RefreshCw, Database } from 'lucide-react'
+import { ChevronRight, RefreshCw } from 'lucide-react'
 import StatusBadge from '../ui/StatusBadge'
+import type { TabType } from './Sidebar'
 
 interface HealthResponse {
   status: string
@@ -11,11 +12,9 @@ interface HealthResponse {
 }
 
 interface NavbarProps {
-  activeTab: 'drone' | 'console' | 'vision' | 'history'
+  activeTab: TabType
   health: HealthResponse | null
   apiState: string
-  searchQuery: string
-  onSearchChange: (query: string) => void
   onRefresh: () => void
   isRefreshing: boolean
 }
@@ -24,8 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   health,
   apiState,
-  searchQuery,
-  onSearchChange,
   onRefresh,
   isRefreshing,
 }) => {
@@ -37,8 +34,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'Structural Telemetry Console'
       case 'vision':
         return 'Single Image Computer Vision'
-      case 'history':
-        return 'Audit Trail & History'
       default:
         return 'Inspection Overview'
     }
@@ -56,18 +51,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         <span>Asset Monitoring</span>
         <ChevronRight size={14} aria-hidden="true" />
         <span className="active">{getTabLabel()}</span>
-      </div>
-
-      {/* Global Quick Search */}
-      <div className="search-shortcut">
-        <Search size={16} aria-hidden="true" />
-        <input
-          type="text"
-          placeholder="Search inspection records, IDs, models..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-        />
-        <span className="kbd-badge">Ctrl K</span>
       </div>
 
       {/* System Health Indicators */}

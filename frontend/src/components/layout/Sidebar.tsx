@@ -1,7 +1,7 @@
 import React from 'react'
-import { Plane, Activity, Camera, History } from 'lucide-react'
+import { Plane, Activity, Camera } from 'lucide-react'
 
-export type TabType = 'drone' | 'console' | 'vision' | 'history'
+export type TabType = 'drone' | 'console' | 'vision'
 
 interface SidebarProps {
   activeTab: TabType
@@ -43,15 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           title="Single Image Vision AI"
         >
           <Camera size={20} aria-hidden="true" />
-        </button>
-
-        <button
-          type="button"
-          className={`rail-button ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => onTabChange('history')}
-          title="Audit Trail & History"
-        >
-          <History size={20} aria-hidden="true" />
         </button>
       </nav>
     </aside>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import './App.css'
 import SplashScreen from './components/SplashScreen'
 import Sidebar from './components/layout/Sidebar'
@@ -7,7 +7,6 @@ import Navbar from './components/layout/Navbar'
 import HeroHeader from './components/layout/HeroHeader'
 import TelemetryConsole from './components/telemetry/TelemetryConsole'
 import SingleVisionConsole from './components/vision/SingleVisionConsole'
-import AuditTable from './components/audit/AuditTable'
 import ModelInventory from './components/models/ModelInventory'
 import DroneInspection from './components/DroneInspection'
 
@@ -58,28 +57,6 @@ type ExplainResponse = {
     feature_importances: any[]
     prediction_contribution: number
   }
-}
-
-type HistoryItem = {
-  id: number
-  created_at: string
-  health_score: number | null
-  failure_probability: number | null
-  rul_days: number | null
-  risk_category: string | null
-  maintenance_priority: string | null
-  maintenance_recommendation?: string | null
-  model_version: string | null
-  analysis_type?: string | null
-  campaign_id?: number | null
-  image_count?: number | null
-  status?: string | null
-  summary_report?: string | null
-}
-
-type HistoryResponse = {
-  items: HistoryItem[]
-  total: number
 }
 
 type ApiState = 'checking' | 'online' | 'degraded' | 'offline'
@@ -173,8 +150,6 @@ function App() {
   const [apiState, setApiState] = useState<ApiState>('checking')
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null)
-  const [history, setHistory] = useState<HistoryItem[]>([])
-  const [historyTotal, setHistoryTotal] = useState(0)
   const [form, setForm] = useState<SensorPayload>(DEFAULT_INPUT)
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null)
   const [explanation, setExplanation] = useState<ExplainResponse | null>(null)
@@ -183,12 +158,8 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  // Navigation & Search States
+  // Navigation Tabs: Drone, Console, Vision
   const [activeTab, setActiveTab] = useState<TabType>('drone')
-  const [historySearch, setHistorySearch] = useState('')
-  const [historyFilter, setHistoryFilter] = useState<string>('all')
-  const [historyPage, setHistoryPage] = useState(1)
-  const itemsPerPage = 8
 
   // Vision Inspection States
   const [visionImageId, setVisionImageId] = useState<string | null>(null)
@@ -200,22 +171,18 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
 
-  const latestHistory = history[0]
-  const healthScore = prediction?.health_score ?? latestHistory?.health_score ?? 85.8
+  const healthScore = prediction?.health_score ?? 85.8
 
   async function refreshSystem() {
     setIsRefreshing(true)
     try {
-      const [healthData, modelData, historyData] = await Promise.all([
+      const [healthData, modelData] = await Promise.all([
         fetchJson<HealthResponse>('/health'),
         fetchJson<ModelInfoResponse>('/model-info'),
-        fetchJson<HistoryResponse>('/history?limit=50&offset=0'),
       ])
 
       setHealth(healthData)
       setModelInfo(modelData)
-      setHistory(historyData.items)
-      setHistoryTotal(historyData.total)
       setApiState(healthData.status === 'healthy' ? 'online' : 'degraded')
       setMessage(null)
     } catch (error) {
@@ -229,42 +196,6 @@ function App() {
   useEffect(() => {
     void refreshSystem()
   }, [])
-
-  const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
-      const typeLower = (item.analysis_type || 'structural_health').toLowerCase()
-      const filterLower = historyFilter.toLowerCase()
-
-      let matchType = false
-      if (filterLower === 'all') {
-        matchType = true
-      } else if (filterLower.includes('drone') || filterLower.includes('campaign')) {
-        matchType = typeLower.includes('drone') || typeLower.includes('campaign')
-      } else if (filterLower.includes('single') || filterLower.includes('image') || filterLower.includes('vision')) {
-        matchType = typeLower.includes('single') || typeLower.includes('image') || typeLower.includes('vision')
-      } else if (filterLower.includes('structural') || filterLower.includes('health')) {
-        matchType = typeLower.includes('structural') || typeLower.includes('health') || typeLower === ''
-      } else {
-        matchType = typeLower.includes(filterLower)
-      }
-
-      const searchLower = historySearch.toLowerCase()
-      const matchSearch =
-        !historySearch ||
-        String(item.id).includes(searchLower) ||
-        (item.model_version || '').toLowerCase().includes(searchLower) ||
-        typeLower.includes(searchLower) ||
-        (item.risk_category || '').toLowerCase().includes(searchLower)
-      return matchType && matchSearch
-    })
-  }, [history, historyFilter, historySearch])
-
-  const paginatedHistory = useMemo(() => {
-    const start = (historyPage - 1) * itemsPerPage
-    return filteredHistory.slice(start, start + itemsPerPage)
-  }, [filteredHistory, historyPage])
-
-  const totalPages = Math.ceil(filteredHistory.length / itemsPerPage) || 1
 
   function updateField(key: string, value: string, isSelect: boolean) {
     setForm((current) => ({
@@ -425,11 +356,6 @@ function App() {
             activeTab={activeTab}
             health={health}
             apiState={apiState}
-            searchQuery={historySearch}
-            onSearchChange={(q) => {
-              setHistorySearch(q)
-              if (activeTab !== 'history') setActiveTab('history')
-            }}
             onRefresh={refreshSystem}
             isRefreshing={isRefreshing}
           />
@@ -442,9 +368,9 @@ function App() {
 
           <HeroHeader
             healthScore={healthScore}
-            failureProbability={prediction?.failure_probability ?? latestHistory?.failure_probability}
-            rulDays={prediction?.rul_days ?? latestHistory?.rul_days}
-            riskCategory={prediction?.risk_category ?? latestHistory?.risk_category}
+            failureProbability={prediction?.failure_probability ?? 2.42}
+            rulDays={prediction?.rul_days ?? 182.7}
+            riskCategory={prediction?.risk_category ?? 'Good'}
             dbConnected={health?.database_ok}
             featureCount={modelInfo?.feature_count}
           />
@@ -463,11 +389,11 @@ function App() {
               explanation={explanation}
               isPredicting={isPredicting}
               isExplaining={isExplaining}
-              latestHistory={latestHistory}
+              latestHistory={null}
               DEFAULT_INPUT={DEFAULT_INPUT}
               CRITICAL_PRESET={CRITICAL_PRESET}
             />
-          ) : activeTab === 'vision' ? (
+          ) : (
             <SingleVisionConsole
               visionImageId={visionImageId}
               visionImageUrl={visionImageUrl}
@@ -482,22 +408,6 @@ function App() {
               onRunVisionPredict={runVisionPredict}
               onDownloadReport={downloadReport}
               onClearImage={clearImage}
-            />
-          ) : (
-            <AuditTable
-              history={history}
-              filteredHistory={filteredHistory}
-              paginatedHistory={paginatedHistory}
-              historyFilter={historyFilter}
-              onFilterChange={(f) => {
-                setHistoryFilter(f)
-                setHistoryPage(1)
-              }}
-              searchQuery={historySearch}
-              onSearchChange={setHistorySearch}
-              currentPage={historyPage}
-              totalPages={totalPages}
-              onPageChange={setHistoryPage}
             />
           )}
 
