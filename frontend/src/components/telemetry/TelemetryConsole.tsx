@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   CircleGauge,
   BarChart3,
@@ -11,9 +11,15 @@ import {
   Waves,
   Route,
   SlidersHorizontal,
+  FileSpreadsheet,
+  FileCode,
+  ArrowRightLeft,
+  ChevronDown,
+  Info,
 } from 'lucide-react'
 import MetricCard from '../ui/MetricCard'
 import StatusBadge from '../ui/StatusBadge'
+import CompareDrawer from '../compare/CompareDrawer'
 
 type SensorPayload = Record<string, number | string | null>
 
@@ -77,39 +83,39 @@ const FIELD_GROUPS: { id: FieldGroup; label: string; icon: any }[] = [
 ]
 
 const SENSOR_FIELDS = [
-  { key: 'Strain_microstrain', label: 'Strain', unit: 'microstrain', group: 'structure', step: 0.1 },
-  { key: 'Deflection_mm', label: 'Deflection', unit: 'mm', group: 'structure', step: 0.01 },
-  { key: 'Vibration_ms2', label: 'Vibration', unit: 'm/s2', group: 'structure', step: 0.01 },
+  { key: 'Strain_microstrain', label: 'Strain', unit: 'microstrain', group: 'structure', step: 0.1, min: -5000, max: 5000 },
+  { key: 'Deflection_mm', label: 'Deflection', unit: 'mm', group: 'structure', step: 0.01, min: 0 },
+  { key: 'Vibration_ms2', label: 'Vibration', unit: 'm/s2', group: 'structure', step: 0.01, min: 0 },
   { key: 'Tilt_deg', label: 'Tilt', unit: 'deg', group: 'structure', step: 0.01 },
   { key: 'Displacement_mm', label: 'Displacement', unit: 'mm', group: 'structure', step: 0.01 },
-  { key: 'Crack_Propagation_mm', label: 'Crack growth', unit: 'mm', group: 'structure', step: 0.001 },
-  { key: 'Corrosion_Level_percent', label: 'Corrosion', unit: '%', group: 'structure', step: 0.01 },
-  { key: 'Cable_Member_Tension_kN', label: 'Cable tension', unit: 'kN', group: 'structure', step: 0.1 },
-  { key: 'Bearing_Joint_Forces_kN', label: 'Bearing forces', unit: 'kN', group: 'structure', step: 0.1 },
-  { key: 'Fatigue_Accumulation_au', label: 'Fatigue', unit: 'a.u.', group: 'structure', step: 0.01 },
-  { key: 'Modal_Frequency_Hz', label: 'Modal frequency', unit: 'Hz', group: 'structure', step: 0.01 },
-  { key: 'Temperature_C', label: 'Temperature', unit: 'C', group: 'environment', step: 0.1 },
-  { key: 'Humidity_percent', label: 'Humidity', unit: '%', group: 'environment', step: 0.1 },
-  { key: 'Wind_Speed_ms', label: 'Wind speed', unit: 'm/s', group: 'environment', step: 0.1 },
-  { key: 'Wind_Direction_deg', label: 'Wind direction', unit: 'deg', group: 'environment', step: 1 },
-  { key: 'Precipitation_mmh', label: 'Precipitation', unit: 'mm/h', group: 'environment', step: 0.1 },
+  { key: 'Crack_Propagation_mm', label: 'Crack growth', unit: 'mm', group: 'structure', step: 0.001, min: 0 },
+  { key: 'Corrosion_Level_percent', label: 'Corrosion', unit: '%', group: 'structure', step: 0.01, min: 0, max: 100 },
+  { key: 'Cable_Member_Tension_kN', label: 'Cable tension', unit: 'kN', group: 'structure', step: 0.1, min: 0 },
+  { key: 'Bearing_Joint_Forces_kN', label: 'Bearing forces', unit: 'kN', group: 'structure', step: 0.1, min: 0 },
+  { key: 'Fatigue_Accumulation_au', label: 'Fatigue', unit: 'a.u.', group: 'structure', step: 0.01, min: 0 },
+  { key: 'Modal_Frequency_Hz', label: 'Modal frequency', unit: 'Hz', group: 'structure', step: 0.01, min: 0 },
+  { key: 'Temperature_C', label: 'Temperature', unit: 'C', group: 'environment', step: 0.1, min: -50, max: 80 },
+  { key: 'Humidity_percent', label: 'Humidity', unit: '%', group: 'environment', step: 0.1, min: 0, max: 100 },
+  { key: 'Wind_Speed_ms', label: 'Wind speed', unit: 'm/s', group: 'environment', step: 0.1, min: 0 },
+  { key: 'Wind_Direction_deg', label: 'Wind direction', unit: 'deg', group: 'environment', step: 1, min: 0, max: 360 },
+  { key: 'Precipitation_mmh', label: 'Precipitation', unit: 'mm/h', group: 'environment', step: 0.1, min: 0 },
   { key: 'Water_Level_m', label: 'Water level', unit: 'm', group: 'environment', step: 0.1 },
-  { key: 'Seismic_Activity_ms2', label: 'Seismic activity', unit: 'm/s2', group: 'environment', step: 0.001 },
-  { key: 'Solar_Radiation_Wm2', label: 'Solar radiation', unit: 'W/m2', group: 'environment', step: 1 },
-  { key: 'Air_Quality_Index_AQI', label: 'Air quality', unit: 'AQI', group: 'environment', step: 1 },
+  { key: 'Seismic_Activity_ms2', label: 'Seismic activity', unit: 'm/s2', group: 'environment', step: 0.001, min: 0 },
+  { key: 'Solar_Radiation_Wm2', label: 'Solar radiation', unit: 'W/m2', group: 'environment', step: 1, min: 0 },
+  { key: 'Air_Quality_Index_AQI', label: 'Air quality', unit: 'AQI', group: 'environment', step: 1, min: 0 },
   { key: 'Soil_Settlement_mm', label: 'Soil settlement', unit: 'mm', group: 'environment', step: 0.01 },
-  { key: 'Vehicle_Load_tons', label: 'Vehicle load', unit: 'tons', group: 'load', step: 0.1 },
-  { key: 'Traffic_Volume_vph', label: 'Traffic volume', unit: 'veh/h', group: 'load', step: 1 },
-  { key: 'Pedestrian_Load_pph', label: 'Pedestrian load', unit: 'people/h', group: 'load', step: 1 },
-  { key: 'Impact_Events_g', label: 'Impact events', unit: 'g', group: 'load', step: 0.001 },
-  { key: 'Dynamic_Load_Distribution_percent', label: 'Load distribution', unit: '%', group: 'load', step: 0.1 },
-  { key: 'Axle_Counts_pmin', label: 'Axle count', unit: '/min', group: 'load', step: 0.1 },
-  { key: 'Anomaly_Detection_Score', label: 'Anomaly score', group: 'diagnostics', step: 0.01 },
-  { key: 'Energy_Dissipation_au', label: 'Energy dissipation', unit: 'a.u.', group: 'diagnostics', step: 0.001 },
-  { key: 'Acoustic_Emissions_levels', label: 'Acoustic emissions', group: 'diagnostics', step: 0.01 },
-  { key: 'Visual_Analysis_Defect_Score', label: 'Visual defect score', group: 'diagnostics', step: 0.001 },
-  { key: 'Electrical_Resistance_ohms', label: 'Electrical resistance', unit: 'ohms', group: 'diagnostics', step: 0.001 },
-  { key: 'Localized_Strain_Hotspot', label: 'Localized hotspot', group: 'diagnostics', step: 1 },
+  { key: 'Vehicle_Load_tons', label: 'Vehicle load', unit: 'tons', group: 'load', step: 0.1, min: 0 },
+  { key: 'Traffic_Volume_vph', label: 'Traffic volume', unit: 'veh/h', group: 'load', step: 1, min: 0 },
+  { key: 'Pedestrian_Load_pph', label: 'Pedestrian load', unit: 'people/h', group: 'load', step: 1, min: 0 },
+  { key: 'Impact_Events_g', label: 'Impact events', unit: 'g', group: 'load', step: 0.001, min: 0 },
+  { key: 'Dynamic_Load_Distribution_percent', label: 'Load distribution', unit: '%', group: 'load', step: 0.1, min: 0, max: 100 },
+  { key: 'Axle_Counts_pmin', label: 'Axle count', unit: '/min', group: 'load', step: 0.1, min: 0 },
+  { key: 'Anomaly_Detection_Score', label: 'Anomaly score', group: 'diagnostics', step: 0.01, min: 0, max: 1 },
+  { key: 'Energy_Dissipation_au', label: 'Energy dissipation', unit: 'a.u.', group: 'diagnostics', step: 0.001, min: 0 },
+  { key: 'Acoustic_Emissions_levels', label: 'Acoustic emissions', group: 'diagnostics', step: 0.01, min: 0 },
+  { key: 'Visual_Analysis_Defect_Score', label: 'Visual defect score', group: 'diagnostics', step: 0.001, min: 0 },
+  { key: 'Electrical_Resistance_ohms', label: 'Electrical resistance', unit: 'ohms', group: 'diagnostics', step: 0.001, min: 0 },
+  { key: 'Localized_Strain_Hotspot', label: 'Localized hotspot', group: 'diagnostics', step: 1, min: 0, max: 1 },
   {
     key: 'Bridge_Mood_Meter',
     label: 'Bridge mood',
@@ -122,12 +128,12 @@ const SENSOR_FIELDS = [
     group: 'diagnostics',
     options: ['Unknown', 'Deck', 'Cables', 'Piers'],
   },
-  { key: 'Flood_Event_Flag', label: 'Flood event', group: 'diagnostics', step: 1 },
-  { key: 'High_Winds_Storms', label: 'High winds', group: 'diagnostics', step: 1 },
-  { key: 'Landslide_Ground_Movement', label: 'Ground movement', group: 'diagnostics', step: 1 },
-  { key: 'Abnormal_Traffic_Load_Surges', label: 'Traffic surge', group: 'diagnostics', step: 1 },
-  { key: 'SHI_Predicted_7d_Ahead', label: 'SHI 7d forecast', group: 'diagnostics', step: 0.01 },
-  { key: 'SHI_Predicted_30d_Ahead', label: 'SHI 30d forecast', group: 'diagnostics', step: 0.01 },
+  { key: 'Flood_Event_Flag', label: 'Flood event', group: 'diagnostics', step: 1, min: 0, max: 1 },
+  { key: 'High_Winds_Storms', label: 'High winds', group: 'diagnostics', step: 1, min: 0, max: 1 },
+  { key: 'Landslide_Ground_Movement', label: 'Ground movement', group: 'diagnostics', step: 1, min: 0, max: 1 },
+  { key: 'Abnormal_Traffic_Load_Surges', label: 'Traffic surge', group: 'diagnostics', step: 1, min: 0, max: 1 },
+  { key: 'SHI_Predicted_7d_Ahead', label: 'SHI 7d forecast', group: 'diagnostics', step: 0.01, min: 0, max: 1 },
+  { key: 'SHI_Predicted_30d_Ahead', label: 'SHI 30d forecast', group: 'diagnostics', step: 0.01, min: 0, max: 1 },
 ]
 
 function formatNumber(val: number | null | undefined, digits = 1) {
@@ -136,6 +142,71 @@ function formatNumber(val: number | null | undefined, digits = 1) {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
   })
+}
+
+function getValidationError(form: SensorPayload): string | null {
+  const corrosion = Number(form['Corrosion_Level_percent'])
+  if (!isNaN(corrosion) && (corrosion < 0 || corrosion > 100)) {
+    return 'Corrosion level must be between 0% and 100%.'
+  }
+
+  const humidity = Number(form['Humidity_percent'])
+  if (!isNaN(humidity) && (humidity < 0 || humidity > 100)) {
+    return 'Humidity percentage must be between 0% and 100%.'
+  }
+
+  const loadDist = Number(form['Dynamic_Load_Distribution_percent'])
+  if (!isNaN(loadDist) && (loadDist < 0 || loadDist > 100)) {
+    return 'Dynamic Load Distribution must be between 0% and 100%.'
+  }
+
+  const crack = Number(form['Crack_Propagation_mm'])
+  if (!isNaN(crack) && crack < 0) {
+    return 'Crack growth propagation cannot be a negative value.'
+  }
+
+  const vibration = Number(form['Vibration_ms2'])
+  if (!isNaN(vibration) && vibration < 0) {
+    return 'Vibration measurement cannot be a negative value.'
+  }
+
+  return null
+}
+
+function formatShapInsight(feature: string, val: number, direction: string): string {
+  const cleanName = feature.replaceAll('_', ' ')
+  const pct = Math.abs(val * 100).toFixed(1)
+  if (direction === 'positive' || val > 0) {
+    return `Elevated ${cleanName} increased structural failure risk by ${pct}%.`
+  } else {
+    return `Normal ${cleanName} reduced structural failure risk by ${pct}%.`
+  }
+}
+
+function downloadCsv(data: Record<string, any>, filename: string) {
+  const keys = Object.keys(data)
+  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
+  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement('a')
+  link.setAttribute('href', encodedUri)
+  link.setAttribute('download', `${filename}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+function downloadJson(data: object, filename: string) {
+  const jsonStr = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
@@ -150,17 +221,31 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
   isPredicting,
   isExplaining,
   latestHistory,
+  DEFAULT_INPUT,
   CRITICAL_PRESET,
 }) => {
   const [activeGroup, setActiveGroup] = useState<FieldGroup>('structure')
+  const [isCompareOpen, setIsCompareOpen] = useState(false)
 
+  const validationError = useMemo(() => getValidationError(form), [form])
   const visibleFields = SENSOR_FIELDS.filter((f) => f.group === activeGroup)
+
   const healthScore = prediction?.health_score ?? latestHistory?.health_score ?? 85.8
   const pofValue = prediction?.failure_probability ?? latestHistory?.failure_probability ?? 2.42
   const rulValue = prediction?.rul_days ?? latestHistory?.rul_days ?? 182.7
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Compare Side-by-Side Drawer Component */}
+      <CompareDrawer
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        runA={null}
+        runB={prediction}
+        labelA="Baseline Threshold"
+        labelB="Current AI Prediction"
+      />
+
       {/* Primary KPI Metrics Grid */}
       <div className="stats-card-grid">
         <MetricCard
@@ -201,6 +286,14 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
           icon={Sparkles}
         />
       </div>
+
+      {/* Input Validation Error Banner */}
+      {validationError && (
+        <div className="banner" role="alert" style={{ background: 'var(--danger-bg)', borderColor: 'rgba(239, 68, 68, 0.4)', color: 'var(--danger)', borderRadius: '12px' }}>
+          <AlertTriangle size={18} />
+          <span><b>Input Validation Error:</b> {validationError}</span>
+        </div>
+      )}
 
       {/* Main Form & Results Grid */}
       <div className="content-grid">
@@ -264,6 +357,8 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
                       type="number"
                       className="form-control"
                       step={field.step ?? 0.1}
+                      min={field.min}
+                      max={field.max}
                       value={value ?? ''}
                       onChange={(e) => onFieldChange(field.key, e.target.value, false)}
                     />
@@ -273,14 +368,24 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
             })}
           </div>
 
-          {/* Single Primary Call-To-Action */}
-          <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Action Row */}
+          <div style={{ marginTop: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsCompareOpen(true)}
+              disabled={!prediction}
+              style={{ fontSize: '0.88rem' }}
+            >
+              <ArrowRightLeft size={16} /> Compare Run Side-by-Side
+            </button>
+
             <button
               type="button"
               className="btn btn-primary"
               style={{ padding: '12px 28px', fontSize: '0.95rem' }}
               onClick={onRunPrediction}
-              disabled={isPredicting}
+              disabled={isPredicting || Boolean(validationError)}
             >
               <Send size={18} />
               {isPredicting ? 'Executing AI Models...' : 'Run Telemetry AI Prediction'}
@@ -295,22 +400,25 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
               <p className="eyebrow">AI Inference Output</p>
               <h2>Prediction Assessment</h2>
             </div>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onExplainPrediction}
-              disabled={isExplaining || !prediction}
-              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-            >
-              <Sparkles size={14} />
-              {isExplaining ? 'Computing SHAP...' : 'Explain'}
-            </button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onExplainPrediction}
+                disabled={isExplaining || !prediction}
+                style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+              >
+                <Sparkles size={14} />
+                {isExplaining ? 'Computing SHAP...' : 'Explain'}
+              </button>
+            </div>
           </div>
 
+          {/* Ordered Presentation Results */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
               <span style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>Risk Category</span>
-              <StatusBadge status={prediction?.risk_category ?? latestHistory?.risk_category ?? 'Awaiting Run'} />
+              <StatusBadge status={prediction?.risk_category ?? latestHistory?.risk_category ?? 'Good'} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
@@ -324,17 +432,55 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
             </div>
           </div>
 
+          {/* Structured Exports */}
+          {prediction && (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => downloadCsv(prediction, `Telemetry_Prediction_${prediction.prediction_id || 'result'}`)}
+                style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+              >
+                <FileSpreadsheet size={14} /> Export CSV
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => downloadJson(prediction, `Telemetry_Prediction_${prediction.prediction_id || 'result'}`)}
+                style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+              >
+                <FileCode size={14} /> Export JSON
+              </button>
+            </div>
+          )}
+
+          {/* Natural Language SHAP Explanations */}
           {explanation && (
-            <div style={{ marginTop: '20px', padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <h4 style={{ fontSize: '0.88rem', margin: '0 0 12px', color: 'var(--ink)' }}>Top SHAP Drivers</h4>
-              {explanation.explanation.feature_importances.slice(0, 5).map((item) => (
-                <div key={item.feature} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-line)', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--muted)' }}>{item.feature.replaceAll('_', ' ')}</span>
-                  <strong style={{ color: item.direction === 'positive' ? 'var(--danger)' : 'var(--success)' }}>
-                    {formatNumber(item.shap_value, 3)}
-                  </strong>
+            <div style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
+              <h4 style={{ fontSize: '0.9rem', margin: '0 0 12px', color: 'var(--ink)' }}>Engineering SHAP Insights</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+                {explanation.explanation.feature_importances.slice(0, 4).map((item) => (
+                  <div key={item.feature} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '6px 0', borderBottom: '1px solid var(--border-line)' }}>
+                    <Info size={15} style={{ color: item.direction === 'positive' ? 'var(--danger)' : 'var(--success)', marginTop: '2px', flexShrink: 0 }} />
+                    <span style={{ lineHeight: 1.4 }}>
+                      {formatShapInsight(item.feature, item.shap_value, item.direction)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Expandable Numeric SHAP Details */}
+              <details style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--muted)' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 600 }}>View Raw SHAP Values</summary>
+                <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {explanation.explanation.feature_importances.map((item) => (
+                    <div key={item.feature} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                      <span>{item.feature}</span>
+                      <strong>{formatNumber(item.shap_value, 4)}</strong>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </details>
             </div>
           )}
         </section>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Upload, Camera, FileDown, Sparkles, RefreshCw, X, Image as ImageIcon } from 'lucide-react'
+import React from 'react'
+import { Upload, FileDown, Sparkles, RefreshCw, X, Image as ImageIcon, FileSpreadsheet, FileCode, AlertCircle, ShieldAlert } from 'lucide-react'
 import StatusBadge from '../ui/StatusBadge'
 
 interface SingleVisionConsoleProps {
@@ -24,6 +24,32 @@ function formatNumber(val: number | null | undefined, digits = 1) {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
   })
+}
+
+function downloadCsv(data: Record<string, any>, filename: string) {
+  const keys = Object.keys(data)
+  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
+  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement('a')
+  link.setAttribute('href', encodedUri)
+  link.setAttribute('download', `${filename}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+function downloadJson(data: object, filename: string) {
+  const jsonStr = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
@@ -151,30 +177,57 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
               <StatusBadge status={visionPrediction.predictions.risk_category} />
             </div>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={onDownloadReport}
-              disabled={isGeneratingReport}
-              style={{ width: '100%' }}
-            >
-              <FileDown size={18} />
-              {isGeneratingReport ? 'Generating PDF...' : 'Download PDF Inspection Report'}
-            </button>
+            {/* Structured Report & Export Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={onDownloadReport}
+                disabled={isGeneratingReport}
+                style={{ width: '100%' }}
+              >
+                <FileDown size={18} />
+                {isGeneratingReport ? 'Generating PDF Report...' : 'Download PDF Inspection Report'}
+              </button>
 
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => downloadCsv(visionPrediction.features, `Vision_Defects_${visionPrediction.prediction_id || 'analysis'}`)}
+                  style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  <FileSpreadsheet size={14} /> Export CSV
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => downloadJson(visionPrediction, `Vision_Defects_${visionPrediction.prediction_id || 'analysis'}`)}
+                  style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  <FileCode size={14} /> Export JSON
+                </button>
+              </div>
+            </div>
+
+            {/* Defect Cards Grid */}
             <div style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '0.88rem' }}>Extracted CV Features</h4>
-              {[
-                { label: 'Crack Density', val: `${visionPrediction.features.crack_density}%` },
-                { label: 'Max Crack Width', val: `${visionPrediction.features.crack_width} mm` },
-                { label: 'Corrosion Area', val: `${visionPrediction.features.corrosion_percent}%` },
-                { label: 'Concrete Spalling', val: `${visionPrediction.features.spalling_percent}%` },
-              ].map((row) => (
-                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-line)', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--muted)' }}>{row.label}</span>
-                  <strong>{row.val}</strong>
-                </div>
-              ))}
+              <h4 style={{ margin: '0 0 12px', fontSize: '0.88rem' }}>Detected Defect Classification</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { type: 'Concrete Surface Cracking', severity: 'Moderate', detail: `Density: ${visionPrediction.features.crack_density}% | Max Width: ${visionPrediction.features.crack_width} mm` },
+                  { type: 'Steel Element Corrosion', severity: 'Low', detail: `Affected Area: ${visionPrediction.features.corrosion_percent}%` },
+                  { type: 'Concrete Spalling', severity: 'Minor', detail: `Surface Spalling: ${visionPrediction.features.spalling_percent}%` },
+                ].map((defect) => (
+                  <div key={defect.type} style={{ padding: '10px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-line)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <strong style={{ fontSize: '0.85rem' }}>{defect.type}</strong>
+                      <StatusBadge status={defect.severity} />
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{defect.detail}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : (

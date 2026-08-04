@@ -115,6 +115,8 @@ const CRITICAL_PRESET: SensorPayload = {
   Corrosion_Level_percent: 12.5,
   Bridge_Mood_Meter: 'Critical',
   Anomaly_Detection_Score: 0.85,
+  SHI_Predicted_7d_Ahead: 0.35,
+  SHI_Predicted_30d_Ahead: 0.20,
 }
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {

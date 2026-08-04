@@ -473,7 +473,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
 
       {/* STEP 2: CAMPAIGN PROCESSING STAGE */}
       {inspectionId !== null && record && record.status !== 'completed' && record.status !== 'failed' && (
-        <div className="surface" style={{ textAlign: 'center', padding: '60px 24px' }}>
+        <div className="surface" style={{ textAlign: 'center', padding: '50px 24px' }}>
           <RefreshCw size={52} className="spinning" style={{ color: 'var(--primary)', marginBottom: '20px' }} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 8px' }}>
             Analyzing Campaign #{inspectionId}
@@ -481,6 +481,27 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
           <p style={{ color: 'var(--muted)', fontSize: '0.95rem', margin: '0 0 24px' }}>
             YOLOv11 & SAM2 Vision AI engines running multi-image morphological defect segmentation...
           </p>
+
+          {/* 5-Stage Processing Timeline Track */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', maxWidth: '640px', margin: '0 auto 20px' }}>
+            {[
+              { label: 'Queued', step: 0.15 },
+              { label: 'Preprocessing', step: 0.35 },
+              { label: 'Vision AI', step: 0.65 },
+              { label: 'Report Gen', step: 0.90 },
+              { label: 'Completed', step: 1.0 },
+            ].map((stage) => {
+              const isPast = record.progress >= stage.step
+              return (
+                <div key={stage.label} style={{ textAlign: 'center' }}>
+                  <div style={{ height: '6px', borderRadius: '4px', background: isPast ? 'var(--primary)' : 'var(--surface-alt)', transition: 'background 0.3s' }} />
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: isPast ? 'var(--primary)' : 'var(--muted)', marginTop: '4px', display: 'block' }}>
+                    {stage.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
 
           <div style={{ width: '100%', maxWidth: '520px', height: '10px', background: 'var(--surface-alt)', borderRadius: '99px', overflow: 'hidden', margin: '0 auto 12px', border: '1px solid var(--border-line)' }}>
             <div
