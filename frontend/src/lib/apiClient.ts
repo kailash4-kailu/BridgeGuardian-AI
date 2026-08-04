@@ -12,6 +12,7 @@ import type {
   SensorPayload,
   UploadedFile,
   InspectionRecord,
+  PredictionHistoryResponse,
 } from '../types'
 
 export class ApiError extends Error {
@@ -110,4 +111,7 @@ export const apiClient = {
 
   getDroneInspectionStatus: (id: number) =>
     request<InspectionRecord>(`/inspection/${id}`),
+
+  getHistory: (limit = 50, offset = 0) =>
+    request<PredictionHistoryResponse>(`/history?limit=${limit}&offset=${offset}`),
 }

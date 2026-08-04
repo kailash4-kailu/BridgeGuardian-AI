@@ -1,7 +1,6 @@
 import React from 'react'
-import { Plane, Activity, Camera } from 'lucide-react'
-
-export type TabType = 'drone' | 'console' | 'vision'
+import { Plane, Activity, Camera, Cpu } from 'lucide-react'
+import type { TabType } from '../../types'
 
 interface SidebarProps {
   activeTab: TabType
@@ -79,6 +78,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           title="Single Image Computer Vision (Defect Segmentation)"
         >
           <Camera size={20} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          id="tab-diagnostics"
+          aria-selected={activeTab === 'diagnostics'}
+          aria-controls="panel-diagnostics"
+          aria-label="System Diagnostics Page"
+          tabIndex={0}
+          className={`rail-button ${activeTab === 'diagnostics' ? 'active' : ''}`}
+          onClick={() => onTabChange('diagnostics')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onTabChange('diagnostics')
+            }
+          }}
+          title="System Diagnostics (Infrastructure & Model Specs)"
+        >
+          <Cpu size={20} aria-hidden="true" />
         </button>
       </nav>
     </aside>

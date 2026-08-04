@@ -5,7 +5,31 @@
 
 export type ApiState = 'checking' | 'online' | 'degraded' | 'offline'
 
-export type TabType = 'drone' | 'console' | 'vision'
+export type TabType = 'drone' | 'console' | 'vision' | 'diagnostics'
+
+export interface PredictionHistoryItem {
+  id: number
+  created_at: string
+  health_score: number | null
+  failure_probability: number | null
+  rul_days: number | null
+  risk_category: string | null
+  maintenance_priority: string | null
+  maintenance_recommendation: string | null
+  model_version: string | null
+  analysis_type: 'drone_campaign' | 'single_image' | 'structural_health' | string
+  campaign_id: number | null
+  image_count: number | null
+  status: string
+  summary_report: string | null
+}
+
+export interface PredictionHistoryResponse {
+  items: PredictionHistoryItem[]
+  total: number
+  page: number
+  limit: number
+}
 
 export type SensorPayload = Record<string, number | string | null>
 

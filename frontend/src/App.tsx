@@ -6,7 +6,8 @@ import Navbar from './components/layout/Navbar'
 import HeroHeader from './components/layout/HeroHeader'
 import TelemetryConsole from './components/telemetry/TelemetryConsole'
 import SingleVisionConsole from './components/vision/SingleVisionConsole'
-import ModelInventory from './components/models/ModelInventory'
+import SystemDiagnostics from './components/models/SystemDiagnostics'
+import InspectionIntelligence from './components/inspection/InspectionIntelligence'
 import DroneInspection from './components/DroneInspection'
 
 import { apiClient, ApiError } from './lib/apiClient'
@@ -20,6 +21,7 @@ import type {
   PredictionResponse,
   ExplainResponse,
   ApiState,
+  PredictionHistoryItem,
 } from './types'
 
 const DEFAULT_INPUT: SensorPayload = {
@@ -90,6 +92,7 @@ function App() {
   const [apiState, setApiState] = useState<ApiState>('checking')
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [modelInfo, setModelInfo] = useState<ModelInfoResponse | null>(null)
+  const [historyItems, setHistoryItems] = useState<PredictionHistoryItem[]>([])
   const [form, setForm] = useState<SensorPayload>(DEFAULT_INPUT)
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null)
   const [explanation, setExplanation] = useState<ExplainResponse | null>(null)
@@ -143,13 +146,17 @@ function App() {
   const refreshSystem = useCallback(async () => {
     setIsRefreshing(true)
     try {
-      const [healthData, modelData] = await Promise.all([
+      const [healthData, modelData, historyData] = await Promise.all([
         apiClient.getHealth(),
         apiClient.getModelInfo(),
+        apiClient.getHistory(50, 0).catch(() => ({ items: [], total: 0, page: 1, limit: 50 })),
       ])
 
       setHealth(healthData)
       setModelInfo(modelData)
+      if (historyData && Array.isArray(historyData.items)) {
+        setHistoryItems(historyData.items)
+      }
       setApiState(healthData.status === 'healthy' ? 'online' : 'degraded')
       setMessage(null)
     } catch (error) {
@@ -295,6 +302,17 @@ function App() {
     void refreshSystem()
   }
 
+  const handleSelectHistoryItem = (item: PredictionHistoryItem) => {
+    if (item.analysis_type === 'drone_campaign') {
+      setActiveTab('drone')
+    } else if (item.analysis_type === 'single_image') {
+      setActiveTab('vision')
+    } else {
+      setActiveTab('console')
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <>
       <SplashScreen />
@@ -348,7 +366,7 @@ function App() {
                 CRITICAL_PRESET={CRITICAL_PRESET}
               />
             </div>
-          ) : (
+          ) : activeTab === 'vision' ? (
             <div id="panel-vision" role="tabpanel" aria-labelledby="tab-vision">
               <SingleVisionConsole
                 visionImageId={visionImageId}
@@ -366,9 +384,27 @@ function App() {
                 onClearImage={clearImage}
               />
             </div>
+          ) : (
+            <div id="panel-diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics">
+              <SystemDiagnostics health={health} modelInfo={modelInfo} />
+            </div>
           )}
 
-          <ModelInventory health={health} modelInfo={modelInfo} />
+          {activeTab !== 'diagnostics' && (
+            <InspectionIntelligence
+              activeTab={activeTab}
+              droneRecord={droneRecord}
+              telemetryPrediction={prediction}
+              visionPrediction={visionPrediction}
+              isAnalyzing={isGlobalAnalyzing}
+              historyItems={historyItems}
+              onDownloadPdf={downloadReport}
+              onStartInspection={() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+              onSelectHistoryItem={handleSelectHistoryItem}
+            />
+          )}
         </section>
       </main>
     </>
