@@ -281,7 +281,7 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
             1
           )}
           unit="%"
-          trendLabel="RF / XGBoost Engine"
+          trendLabel="Predictive Analytics"
           trendTone="good"
           icon={Sparkles}
         />
@@ -428,7 +428,7 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
               <span style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>Model Architecture</span>
-              <strong style={{ fontSize: '0.88rem' }}>{prediction?.model_version ?? 'RandomForest / XGBoost'}</strong>
+              <strong style={{ fontSize: '0.88rem' }}>{prediction?.model_version ?? 'Predictive Analytics Engine'}</strong>
             </div>
           </div>
 

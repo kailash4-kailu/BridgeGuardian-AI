@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           tabIndex={0}
           className={`rail-button ${activeTab === 'console' ? 'active' : ''}`}
           onClick={() => onTabChange('console')}
-          title="Telemetry Sensor Console (Physics & SHAP AI)"
+          title="Telemetry Sensor Console (Predictive AI)"
         >
           <Activity size={20} aria-hidden="true" />
         </button>
@@ -52,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           tabIndex={0}
           className={`rail-button ${activeTab === 'vision' ? 'active' : ''}`}
           onClick={() => onTabChange('vision')}
-          title="Single Image Computer Vision (YOLOv11 & SAM2)"
+          title="Single Image Computer Vision Analysis"
         >
           <Camera size={20} aria-hidden="true" />
         </button>

@@ -479,7 +479,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
             Analyzing Campaign #{inspectionId}
           </h2>
           <p style={{ color: 'var(--muted)', fontSize: '0.95rem', margin: '0 0 24px' }}>
-            YOLOv11 & SAM2 Vision AI engines running multi-image morphological defect segmentation...
+            Computer vision engines running multi-image morphological defect analysis...
           </p>
 
           {/* 5-Stage Processing Timeline Track */}
@@ -633,7 +633,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
                     {[
                       { key: 'original', label: 'Original' },
                       { key: 'bboxes', label: 'Bounding Boxes' },
-                      { key: 'segmentation', label: 'SAM2 Masks' },
+                      { key: 'segmentation', label: 'Segmentation Masks' },
                       { key: 'heatmap', label: 'Heatmap' },
                     ].map((ov) => (
                       <button

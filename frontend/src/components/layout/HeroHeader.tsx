@@ -39,9 +39,9 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({
             <span>|</span>
             <span>Database: {dbConnected ? 'Connected' : 'Offline'}</span>
             <span>|</span>
-            <span>{featureCount} Active Sensor Parameters</span>
+            <span>Multi-Sensor Telemetry Analysis</span>
             <span>|</span>
-            <span>YOLOv11 & SAM2 Vision AI Engine</span>
+            <span>Computer Vision Inspection Service</span>
           </p>
         </div>
 

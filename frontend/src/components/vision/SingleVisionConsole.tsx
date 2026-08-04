@@ -110,7 +110,7 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
               {isAnalyzing ? (
                 <div style={{ textAlign: 'center', color: '#FFF', padding: '40px' }}>
                   <RefreshCw size={40} className="spinning" style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-                  <h3>Running YOLOv11 & SAM2 Vision Engine...</h3>
+                  <h3>Running Computer Vision Defect Analysis...</h3>
                 </div>
               ) : (
                 <img
@@ -139,7 +139,7 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
                 {[
                   { key: 'original', label: 'Original Photo' },
                   { key: 'bboxes', label: 'Bounding Boxes' },
-                  { key: 'segmentation', label: 'SAM2 Masks' },
+                  { key: 'segmentation', label: 'Segmentation Masks' },
                   { key: 'heatmap', label: 'Heatmap Overlay' },
                 ].map((ov) => (
                   <button
