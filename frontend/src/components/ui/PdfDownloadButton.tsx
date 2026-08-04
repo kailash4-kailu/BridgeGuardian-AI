@@ -14,11 +14,11 @@ interface PdfDownloadButtonProps {
 export const PdfDownloadButton: React.FC<PdfDownloadButtonProps> = ({
   onDownload,
   disabled = false,
-  disabledTooltip = 'No report available yet. Run an inspection to generate a report.',
+  disabledTooltip = 'No inspection report available. Run an analysis to generate a report.',
   label = 'Download PDF Report',
   className = 'btn btn-primary',
   style,
-  showStatusBanner = true,
+  showStatusBanner = false,
 }) => {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorInfo, setErrorInfo] = useState<{ title: string; message: string } | null>(null)

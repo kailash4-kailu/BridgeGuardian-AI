@@ -24,6 +24,7 @@ interface InspectionIntelligenceProps {
   visionPrediction?: any | null
   isAnalyzing?: boolean
   onDownloadPdf?: () => void
+  onViewPdf?: () => void
   onStartInspection?: () => void
 }
 
@@ -34,6 +35,7 @@ export const InspectionIntelligence: React.FC<InspectionIntelligenceProps> = ({
   visionPrediction,
   isAnalyzing = false,
   onDownloadPdf,
+  onViewPdf,
   onStartInspection,
 }) => {
   const [showReportModal, setShowReportModal] = useState(false)
@@ -225,33 +227,41 @@ export const InspectionIntelligence: React.FC<InspectionIntelligenceProps> = ({
             <FileText size={18} style={{ color: 'var(--primary)' }} />
             <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Reports</h3>
           </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-            Access compiled PDF inspection documentation and executive summaries for structural compliance.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setShowReportModal(true)}
-              style={{ fontSize: '0.85rem', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-            >
-              <Eye size={16} /> View Report
-            </button>
+          
+          {hasActiveAnalysis ? (
+            <>
+              <p style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+                Access compiled PDF inspection documentation and executive summaries for structural compliance.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => (onViewPdf ? onViewPdf() : setShowReportModal(true))}
+                  style={{ fontSize: '0.85rem', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <Eye size={16} /> View Report
+                </button>
 
-            <PdfDownloadButton
-              onDownload={async () => {
-                if (onDownloadPdf) {
-                  await onDownloadPdf()
-                } else {
-                  throw new Error('NO_INSPECTION_RUN')
-                }
-              }}
-              disabled={!hasActiveAnalysis}
-              disabledTooltip="No report available yet. Run an inspection to generate a report."
-              label="Download PDF Report"
-              style={{ width: '100%' }}
-            />
-          </div>
+                <PdfDownloadButton
+                  onDownload={async () => {
+                    if (onDownloadPdf) {
+                      await onDownloadPdf()
+                    }
+                  }}
+                  disabled={!hasActiveAnalysis}
+                  disabledTooltip="No inspection report available. Run an analysis to generate a report."
+                  label="Download PDF"
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </>
+          ) : (
+            <div style={{ color: 'var(--muted)', fontSize: '0.85rem', padding: '16px 0', textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <strong>No inspection report available.</strong>
+              <span>Run an analysis to generate a report.</span>
+            </div>
+          )}
         </div>
       </div>
 

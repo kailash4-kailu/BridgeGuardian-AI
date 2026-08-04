@@ -260,15 +260,54 @@ function App() {
     }
   }
 
+  const getActivePdfConfig = useCallback(() => {
+    if (activeTab === 'drone' && droneRecord?.id) {
+      return {
+        url: `${API_BASE}/inspection/report/${droneRecord.id}`,
+        filename: `Drone_Inspection_Report_#${droneRecord.id}.pdf`,
+      }
+    }
+    if (activeTab === 'vision' && visionPrediction?.prediction_id && visionImageId) {
+      return {
+        url: `${API_BASE}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`,
+        filename: `Vision_Report_#${visionPrediction.prediction_id}.pdf`,
+      }
+    }
+    if (activeTab === 'console' && prediction?.prediction_id) {
+      return {
+        url: `${API_BASE}/inspection/report/${prediction.prediction_id}`,
+        filename: `Telemetry_Report_#${prediction.prediction_id}.pdf`,
+      }
+    }
+    if (droneRecord?.id) {
+      return {
+        url: `${API_BASE}/inspection/report/${droneRecord.id}`,
+        filename: `Drone_Inspection_Report_#${droneRecord.id}.pdf`,
+      }
+    }
+    if (visionPrediction?.prediction_id && visionImageId) {
+      return {
+        url: `${API_BASE}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`,
+        filename: `Vision_Report_#${visionPrediction.prediction_id}.pdf`,
+      }
+    }
+    if (prediction?.prediction_id) {
+      return {
+        url: `${API_BASE}/inspection/report/${prediction.prediction_id}`,
+        filename: `Telemetry_Report_#${prediction.prediction_id}.pdf`,
+      }
+    }
+    return null
+  }, [activeTab, droneRecord, visionPrediction, visionImageId, prediction])
+
   async function downloadReport() {
-    if (!visionImageId || !visionPrediction) {
+    const config = getActivePdfConfig()
+    if (!config) {
       throw new Error('NO_INSPECTION_RUN')
     }
     setIsGeneratingReport(true)
     try {
-      const response = await fetch(
-        `${API_BASE}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`
-      )
+      const response = await fetch(config.url)
       if (!response.ok) {
         if (response.status === 404) throw new Error('REPORT_NOT_FOUND')
         if (response.status === 503 || response.status === 502) throw new Error('SERVICE_UNAVAILABLE')
@@ -279,13 +318,20 @@ function App() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Inspection_Report_${visionPrediction.prediction_id}.pdf`
+      a.download = config.filename
       document.body.appendChild(a)
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
     } finally {
       setIsGeneratingReport(false)
+    }
+  }
+
+  function viewActiveReport() {
+    const config = getActivePdfConfig()
+    if (config) {
+      window.open(config.url, '_blank')
     }
   }
 
@@ -384,6 +430,7 @@ function App() {
             visionPrediction={visionPrediction}
             isAnalyzing={isGlobalAnalyzing}
             onDownloadPdf={downloadReport}
+            onViewPdf={viewActiveReport}
             onStartInspection={() => {
               window.scrollTo({ top: 0, behavior: 'smooth' })
             }}
