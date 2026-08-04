@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import './App.css'
 import SplashScreen from './components/SplashScreen'
 import Sidebar from './components/layout/Sidebar'
-import type { TabType } from './components/layout/Sidebar'
 import Navbar from './components/layout/Navbar'
 import HeroHeader from './components/layout/HeroHeader'
 import TelemetryConsole from './components/telemetry/TelemetryConsole'
@@ -10,56 +9,18 @@ import SingleVisionConsole from './components/vision/SingleVisionConsole'
 import ModelInventory from './components/models/ModelInventory'
 import DroneInspection from './components/DroneInspection'
 
-import { API_BASE, getStaticUrl } from './lib/api'
+import { apiClient, ApiError } from './lib/apiClient'
+import { getStaticUrl } from './lib/api'
 import { compressImage } from './lib/imageUtils'
-
-type SensorPayload = Record<string, number | string | null>
-
-type HealthResponse = {
-  status: string
-  version: string
-  model_ready: boolean
-  database_ok: boolean
-  timestamp: string
-}
-
-type ModelInfoResponse = {
-  is_ready: boolean
-  model_version: string
-  models_available: string[]
-  feature_count: number
-  training_results: Record<string, unknown> | null
-}
-
-type PredictionResponse = {
-  prediction_id: number | null
-  timestamp: string
-  health_score: number
-  health_score_raw: number
-  failure_probability: number
-  failure_probability_raw: number
-  rul_days: number
-  rul_degradation_rate: number
-  rul_confidence: string
-  rul_message: string
-  risk_category: string
-  maintenance_priority: string
-  maintenance_recommendation: string
-  maintenance_alert: boolean
-  prediction_confidence: number
-  model_version: string
-}
-
-type ExplainResponse = {
-  target: string
-  explanation: {
-    base_value: number
-    feature_importances: any[]
-    prediction_contribution: number
-  }
-}
-
-type ApiState = 'checking' | 'online' | 'degraded' | 'offline'
+import type {
+  TabType,
+  SensorPayload,
+  HealthResponse,
+  ModelInfoResponse,
+  PredictionResponse,
+  ExplainResponse,
+  ApiState,
+} from './types'
 
 const DEFAULT_INPUT: SensorPayload = {
   Strain_microstrain: 734.5,
@@ -119,33 +80,10 @@ const CRITICAL_PRESET: SensorPayload = {
   SHI_Predicted_30d_Ahead: 0.20,
 }
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
-    ...init,
-  })
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(text || `${response.status} ${response.statusText}`)
-  }
-
-  return response.json() as Promise<T>
-}
-
-function normalizeError(error: unknown) {
-  if (error instanceof Error) {
-    try {
-      const parsed = JSON.parse(error.message) as { detail?: string }
-      return parsed.detail ?? error.message
-    } catch {
-      return error.message
-    }
-  }
-  return 'Request failed'
+function normalizeError(error: unknown): string {
+  if (error instanceof ApiError) return error.message
+  if (error instanceof Error) return error.message
+  return 'An unexpected error occurred'
 }
 
 function App() {
@@ -160,10 +98,10 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  // Navigation Tabs: Drone, Console, Vision
+  // Active Navigation Tab
   const [activeTab, setActiveTab] = useState<TabType>('drone')
 
-  // Vision Inspection States
+  // Single Vision States
   const [visionImageId, setVisionImageId] = useState<string | null>(null)
   const [visionImageUrl, setVisionImageUrl] = useState<string | null>(null)
   const [visionFilename, setVisionFilename] = useState<string | null>(null)
@@ -175,12 +113,12 @@ function App() {
 
   const healthScore = prediction?.health_score ?? 85.8
 
-  async function refreshSystem() {
+  const refreshSystem = useCallback(async () => {
     setIsRefreshing(true)
     try {
       const [healthData, modelData] = await Promise.all([
-        fetchJson<HealthResponse>('/health'),
-        fetchJson<ModelInfoResponse>('/model-info'),
+        apiClient.getHealth(),
+        apiClient.getModelInfo(),
       ])
 
       setHealth(healthData)
@@ -193,11 +131,11 @@ function App() {
     } finally {
       setIsRefreshing(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     void refreshSystem()
-  }, [])
+  }, [refreshSystem])
 
   function updateField(key: string, value: string, isSelect: boolean) {
     setForm((current) => ({
@@ -210,10 +148,7 @@ function App() {
     setIsPredicting(true)
     setMessage(null)
     try {
-      const result = await fetchJson<PredictionResponse>('/predict', {
-        method: 'POST',
-        body: JSON.stringify(form),
-      })
+      const result = await apiClient.predictTelemetry(form)
       setPrediction(result)
       setExplanation(null)
       await refreshSystem()
@@ -228,13 +163,7 @@ function App() {
     setIsExplaining(true)
     setMessage(null)
     try {
-      const result = await fetchJson<ExplainResponse>('/explain', {
-        method: 'POST',
-        body: JSON.stringify({
-          input_data: form,
-          target: 'health_score',
-        }),
-      })
+      const result = await apiClient.explainPrediction(form, 'health_score')
       setExplanation(result)
     } catch (error) {
       setMessage(normalizeError(error))
@@ -264,19 +193,11 @@ function App() {
     setIsUploading(true)
     setMessage(null)
     setVisionPrediction(null)
-    
+
     try {
       const optimizedFile = await compressImage(file, 1920, 1920, 0.85)
-      const formData = new FormData()
-      formData.append('files', optimizedFile)
+      const data = await apiClient.uploadSingleVisionImage(optimizedFile)
 
-      const response = await fetch(`${API_BASE}/vision/upload-image`, {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) throw new Error('Upload failed')
-      
-      const data = await response.json() as any[]
       if (data && data.length > 0) {
         setVisionImageId(data[0].image_id)
         setVisionImageUrl(getStaticUrl(data[0].url))
@@ -284,7 +205,7 @@ function App() {
         setActiveOverlay('original')
       }
     } catch (err: any) {
-      setMessage(err.message || 'Failed to upload image')
+      setMessage(normalizeError(err))
     } finally {
       setIsUploading(false)
     }
@@ -295,19 +216,12 @@ function App() {
     setIsAnalyzing(true)
     setMessage(null)
     try {
-      const response = await fetch(`${API_BASE}/vision/vision-predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_id: visionImageId, pixel_to_mm: 0.5 }),
-      })
-      if (!response.ok) throw new Error('Vision analysis failed')
-      
-      const data = await response.json()
+      const data = await apiClient.predictSingleVision(visionImageId, 0.5)
       setVisionPrediction(data)
       setActiveOverlay('segmentation')
       await refreshSystem()
     } catch (err: any) {
-      setMessage(err.message || 'Vision inspection failed')
+      setMessage(normalizeError(err))
     } finally {
       setIsAnalyzing(false)
     }
@@ -319,10 +233,10 @@ function App() {
     setMessage(null)
     try {
       const response = await fetch(
-        `${API_BASE}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`
+        `${apiClient}/vision/generate-report?image_id=${visionImageId}&prediction_id=${visionPrediction.prediction_id}`
       )
       if (!response.ok) throw new Error('Report generation failed')
-      
+
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -333,7 +247,7 @@ function App() {
       a.remove()
       window.URL.revokeObjectURL(url)
     } catch (err: any) {
-      setMessage(err.message || 'Failed to download report')
+      setMessage(normalizeError(err))
     } finally {
       setIsGeneratingReport(false)
     }
