@@ -414,22 +414,14 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
             </div>
           </div>
 
-          {/* Ordered Presentation Results */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>Risk Category</span>
-              <StatusBadge status={prediction?.risk_category ?? latestHistory?.risk_category ?? 'Good'} />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>Action Recommendation</span>
-              <strong style={{ fontSize: '0.88rem' }}>{prediction?.maintenance_priority ?? 'Routine Monitoring'}</strong>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)' }}>
-              <span style={{ fontSize: '0.88rem', color: 'var(--muted)' }}>Model Architecture</span>
-              <strong style={{ fontSize: '0.88rem' }}>{prediction?.model_version ?? 'Predictive Analytics Engine'}</strong>
-            </div>
+          {/* Executive Engineering Insight */}
+          <div style={{ padding: '14px 16px', background: 'var(--surface-alt)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--primary)', marginBottom: '20px', fontSize: '0.85rem', lineHeight: 1.5 }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Executive Engineering Directive</span>
+            {healthScore < 50 || (prediction?.risk_category === 'Critical')
+              ? 'CRITICAL WARNING: Accelerated structural deterioration detected. Immediate physical engineering inspection required. Recommend heavy vehicle traffic restrictions within 14 days.'
+              : healthScore < 70 || (prediction?.risk_category === 'Poor')
+              ? 'ATTENTION REQUIRED: Moderate structural distress observed. Schedule detailed engineering assessment within 30 days.'
+              : 'OPTIMAL INTEGRITY: Structural health parameters are within normal baseline tolerances. Schedule routine inspection in 180 days.'}
           </div>
 
           {/* Structured Exports */}
