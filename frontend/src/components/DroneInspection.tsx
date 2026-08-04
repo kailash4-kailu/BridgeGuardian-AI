@@ -4,8 +4,6 @@ import {
   Layers,
   AlertTriangle,
   FileDown,
-  FileSpreadsheet,
-  FileCode,
   Sparkles,
   RefreshCw,
   Search,
@@ -144,31 +142,7 @@ type InspectionRecord = {
   } | null
 }
 
-function downloadCsv(data: Record<string, any>, filename: string) {
-  const keys = Object.keys(data)
-  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
-  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
-  const encodedUri = encodeURI(csvContent)
-  const link = document.createElement('a')
-  link.setAttribute('href', encodedUri)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
 
-function downloadJson(data: object, filename: string) {
-  const jsonStr = JSON.stringify(data, null, 2)
-  const blob = new Blob([jsonStr], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${filename}.json`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 export default function DroneInspection({ onCampaignComplete }: { onCampaignComplete?: (record?: any) => void }) {
   // Upload and queue state
@@ -613,26 +587,7 @@ export default function DroneInspection({ onCampaignComplete }: { onCampaignComp
                   <button type="button" className="btn btn-primary" onClick={downloadReportPdf}>
                     <FileDown size={18} /> Download PDF Report
                   </button>
-                  {record.aggregate_results && (
-                    <>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => downloadCsv(record.aggregate_results || {}, `Drone_Campaign_${inspectionId}`)}
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                      >
-                        <FileSpreadsheet size={14} /> Export CSV
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => downloadJson(record, `Drone_Campaign_${inspectionId}`)}
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                      >
-                        <FileCode size={14} /> Export JSON
-                      </button>
-                    </>
-                  )}
+
                 </div>
               </div>
 

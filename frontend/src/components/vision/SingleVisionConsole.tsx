@@ -1,5 +1,5 @@
 import React from 'react'
-import { Upload, FileDown, Sparkles, RefreshCw, X, Image as ImageIcon, FileSpreadsheet, FileCode, ShieldCheck, Camera, CheckCircle2 } from 'lucide-react'
+import { Upload, FileDown, Sparkles, RefreshCw, X, Image as ImageIcon, ShieldCheck, Camera, CheckCircle2 } from 'lucide-react'
 import StatusBadge from '../ui/StatusBadge'
 
 interface SingleVisionConsoleProps {
@@ -26,31 +26,7 @@ function formatNumber(val: number | null | undefined, digits = 1) {
   })
 }
 
-function downloadCsv(data: Record<string, any>, filename: string) {
-  const keys = Object.keys(data)
-  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
-  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
-  const encodedUri = encodeURI(csvContent)
-  const link = document.createElement('a')
-  link.setAttribute('href', encodedUri)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
 
-function downloadJson(data: object, filename: string) {
-  const jsonStr = JSON.stringify(data, null, 2)
-  const blob = new Blob([jsonStr], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${filename}.json`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
   visionImageId,
@@ -206,24 +182,7 @@ export const SingleVisionConsole: React.FC<SingleVisionConsoleProps> = ({
                 {isGeneratingReport ? 'Generating PDF Report...' : 'Download PDF Inspection Report'}
               </button>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => downloadCsv(visionPrediction.features, `Vision_Defects_${visionPrediction.prediction_id || 'analysis'}`)}
-                  style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
-                >
-                  <FileSpreadsheet size={14} /> Export CSV
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => downloadJson(visionPrediction, `Vision_Defects_${visionPrediction.prediction_id || 'analysis'}`)}
-                  style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
-                >
-                  <FileCode size={14} /> Export JSON
-                </button>
-              </div>
+
             </div>
 
             {/* Defect Cards Grid */}

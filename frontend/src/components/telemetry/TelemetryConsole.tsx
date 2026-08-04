@@ -11,8 +11,6 @@ import {
   Waves,
   Route,
   SlidersHorizontal,
-  FileSpreadsheet,
-  FileCode,
   ArrowRightLeft,
   ChevronDown,
   Info,
@@ -183,31 +181,7 @@ function formatShapInsight(feature: string, val: number, direction: string): str
   }
 }
 
-function downloadCsv(data: Record<string, any>, filename: string) {
-  const keys = Object.keys(data)
-  const values = keys.map((k) => JSON.stringify(data[k] ?? ''))
-  const csvContent = 'data:text/csv;charset=utf-8,' + [keys.join(','), values.join(',')].join('\n')
-  const encodedUri = encodeURI(csvContent)
-  const link = document.createElement('a')
-  link.setAttribute('href', encodedUri)
-  link.setAttribute('download', `${filename}.csv`)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
 
-function downloadJson(data: object, filename: string) {
-  const jsonStr = JSON.stringify(data, null, 2)
-  const blob = new Blob([jsonStr], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `${filename}.json`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
   form,
@@ -441,27 +415,7 @@ export const TelemetryConsole: React.FC<TelemetryConsoleProps> = ({
             )}
           </div>
 
-          {/* Structured Exports */}
-          {prediction && (
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => downloadCsv(prediction, `Telemetry_Prediction_${prediction.prediction_id || 'result'}`)}
-                style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
-              >
-                <FileSpreadsheet size={14} /> Export CSV
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => downloadJson(prediction, `Telemetry_Prediction_${prediction.prediction_id || 'result'}`)}
-                style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
-              >
-                <FileCode size={14} /> Export JSON
-              </button>
-            </div>
-          )}
+
 
           {/* Natural Language SHAP Explanations */}
           {explanation && (
