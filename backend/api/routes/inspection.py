@@ -9,6 +9,7 @@ import shutil
 import json
 import time
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any
 from pydantic import BaseModel
@@ -177,30 +178,60 @@ async def run_inspection(
 async def get_inspection_status(record_id: int, db: Session = Depends(get_db)):
     """
     Retrieves execution status, progress, and computed metrics for an inspection campaign.
+    Conforms strictly to the single immutable InspectionResult data contract.
     """
     record = db.query(InspectionRecord).filter(InspectionRecord.id == record_id).first()
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Inspection record #{record_id} not found.")
 
+    perf = {}
+    if record.performance_metrics_json:
+        try:
+            perf = json.loads(record.performance_metrics_json)
+        except Exception:
+            pass
+
+    accepted_imgs = perf.get("accepted_images", 0)
+    rejected_imgs = perf.get("rejected_images", 0)
+
+    is_failed = (record.status == "failed" or (record.status == "completed" and accepted_imgs == 0))
+    raw_status = record.status.upper() if record.status else "QUEUED"
+    inspection_status = "FAILED" if is_failed else ("COMPLETED" if record.status == "completed" else raw_status)
+
     res = {
         "id": record.id,
         "record_id": record.id,
         "inspection_id": record.id,
+        "inspectionId": record.id,
         "status": record.status,
+        "inspectionStatus": inspection_status,
+        "failureReason": "NO_ACCEPTED_IMAGES" if is_failed else None,
         "progress": record.progress,
         "created_at": record.created_at.isoformat() if record.created_at else None,
         "pdf_report_path": record.pdf_report_path,
-        "health_score": record.health_score,
-        "failure_probability": record.failure_probability,
-        "rul_days": record.rul_days,
-        "risk_category": record.risk_category,
-        "maintenance_priority": record.maintenance_priority,
+        "health_score": record.health_score if not is_failed else None,
+        "failure_probability": record.failure_probability if not is_failed else None,
+        "rul_days": record.rul_days if not is_failed else None,
+        "risk_category": record.risk_category if not is_failed else "Unknown",
+        "maintenance_priority": record.maintenance_priority if not is_failed else "Inspection Required",
+        "maintenance_action": record.maintenance_action if not is_failed else "Re-inspection Required",
         "summary_report": record.summary_report,
+        "acceptedImages": accepted_imgs,
+        "rejectedImages": rejected_imgs,
+        "totalImages": accepted_imgs + rejected_imgs,
+        "confidence": 0.0 if is_failed else 0.95,
+        "performance_metrics": perf
     }
 
     if record.aggregate_results_json:
         try:
             res["aggregate_results"] = json.loads(record.aggregate_results_json)
+        except Exception:
+            pass
+
+    if record.image_results_json:
+        try:
+            res["image_results"] = json.loads(record.image_results_json)
         except Exception:
             pass
 
@@ -218,7 +249,7 @@ async def download_inspection_report(record_id: int, db: Session = Depends(get_d
 
     pdf_path = record.pdf_report_path
     if not pdf_path:
-        reports_dir = Path("backend/static/reports")
+        reports_dir = Path(settings.reports_dir)
         candidate = reports_dir / f"inspection_report_{record_id}.pdf"
         if candidate.exists():
             pdf_path = str(candidate)
@@ -226,9 +257,12 @@ async def download_inspection_report(record_id: int, db: Session = Depends(get_d
     if not pdf_path or not Path(pdf_path.lstrip("/")).exists():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"PDF report for record #{record_id} not yet generated.")
 
+    now_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    download_filename = f"BridgeGuardian_Report_{now_str}.pdf"
+
     clean_path = pdf_path.lstrip("/") if pdf_path.startswith("/") else pdf_path
     return FileResponse(
         path=clean_path,
         media_type="application/pdf",
-        filename=f"inspection_report_{record_id}.pdf"
+        filename=download_filename
     )

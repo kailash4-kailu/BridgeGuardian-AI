@@ -40,7 +40,10 @@ async def lifespan(app: FastAPI):
         settings.logs_dir,
         settings.models_dir,
     ]:
-        Path(directory).mkdir(parents=True, exist_ok=True)
+        try:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+        except Exception as d_err:
+            logger.warning(f"Could not create directory '{directory}': {d_err}")
     logger.info("Configured storage directories verified.")
 
     init_db()
@@ -147,9 +150,12 @@ def create_app() -> FastAPI:
 
     # Static Assets
     from fastapi.staticfiles import StaticFiles
-    static_dir = Path("backend/static")
-    static_dir.mkdir(parents=True, exist_ok=True)
-    app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+    try:
+        static_dir = Path("backend/static")
+        static_dir.mkdir(parents=True, exist_ok=True)
+        app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+    except Exception as s_err:
+        logger.warning(f"Could not mount static directory 'backend/static': {s_err}")
 
     # Prometheus Metrics & System Endpoints
     @app.get("/metrics", tags=["System"])

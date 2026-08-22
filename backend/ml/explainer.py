@@ -106,9 +106,15 @@ class Explainer:
             top_positive = [f for f in importances if f["direction"] == "positive"][:5]
             top_negative = [f for f in importances if f["direction"] == "negative"][:5]
 
-            base_value = float(self._explainer.expected_value)
-            if isinstance(self._explainer.expected_value, (list, np.ndarray)):
-                base_value = float(self._explainer.expected_value[-1])
+            exp_val = self._explainer.expected_value
+            if isinstance(exp_val, (list, np.ndarray)):
+                exp_val_arr = np.array(exp_val)
+                if exp_val_arr.ndim == 0:
+                    base_value = float(exp_val_arr)
+                else:
+                    base_value = float(exp_val_arr.flat[-1])
+            else:
+                base_value = float(exp_val)
 
             return {
                 "base_value": round(base_value, 6),

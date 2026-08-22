@@ -1,0 +1,20 @@
+# BridgeGuardian AI — Koyeb Deployment Configuration
+name: bridgeguardian-ai-backend
+type: web
+routes:
+  - path: /
+    port: 8000
+ports:
+  - port: 8000
+    protocol: http
+env:
+  - key: PORT
+    value: "8000"
+  - key: APP_ENV
+    value: "production"
+  - key: LOG_LEVEL
+    value: "INFO"
+  - key: REDIS_ENABLED
+    value: "false"
+  - key: DATABASE_URL
+    value: "sqlite:///./bridgeguardian.db"

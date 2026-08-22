@@ -1,4 +1,4 @@
-# BridgeGuardian AI — Vercel-Optimized Serverless Dependencies (<250MB Lambda Limit)
+# BridgeGuardian AI — Full Heavy ML Dependencies (For Local Training & Heavy GPU/Docker Environments)
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 gunicorn==23.0.0
@@ -28,9 +28,12 @@ cloudinary==1.41.0
 # Monitoring & Metrics
 prometheus-client==0.21.0
 
-# ML Core (Serverless Compatible: scikit-learn, RandomForest, ExtraTrees, GradientBoosting)
-# Heavy wheels (xgboost, lightgbm, catboost, shap) are excluded for Vercel size limit; codebase automatically falls back seamlessly.
+# ML Core
 scikit-learn==1.5.2
+xgboost==2.1.1
+lightgbm==4.5.0
+catboost==1.2.7
+shap==0.46.0
 
 # Data Processing
 pandas==2.2.3

@@ -84,6 +84,23 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         return self.app_env.lower() == "development"
 
+    @property
+    def is_vercel(self) -> bool:
+        return bool(os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"))
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.is_vercel:
+            if "sqlite" in self.database_url.lower() and "/tmp/" not in self.database_url:
+                self.database_url = "sqlite:////tmp/bridgeguardian.db"
+            if not self.upload_dir.startswith("/tmp"):
+                self.upload_dir = "/tmp/uploads"
+            if not self.processed_dir.startswith("/tmp"):
+                self.processed_dir = "/tmp/processed"
+            if not self.reports_dir.startswith("/tmp"):
+                self.reports_dir = "/tmp/reports"
+            if not self.logs_dir.startswith("/tmp"):
+                self.logs_dir = "/tmp/logs"
+
 
 @lru_cache()
 def get_settings() -> Settings:

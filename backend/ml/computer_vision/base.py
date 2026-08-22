@@ -8,6 +8,21 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 
+class VisionPipelineError(Exception):
+    """Raised when the Vision Engine encounters an unrecoverable failure or empty detections under fail-fast guards."""
+    pass
+
+
+class CampaignStatisticsMismatchError(Exception):
+    """Raised when verified defects exist but campaign_stats['defects'] remains empty."""
+    pass
+
+
+class BrokenDefectPropagationError(Exception):
+    """Raised when defect predictions are lost or dropped between pipeline execution stages."""
+    pass
+
+
 class DetectionResult:
     """Stores the bounding box, class, and confidence for a detected defect/component."""
     def __init__(self, label: str, bbox: List[int], confidence: float) -> None:

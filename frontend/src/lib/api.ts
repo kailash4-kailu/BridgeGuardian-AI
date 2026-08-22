@@ -3,30 +3,25 @@
  *
  * Resolves the correct API base URL for the current deployment mode:
  *
- * - Docker Compose (Nginx):  VITE_API_BASE_URL is empty → relative paths used
- *                            Nginx proxies /api and /static to the backend container
+ * - Vercel All-in-One (Serverless): VITE_API_BASE_URL is empty → relative paths (/api/v1) used.
+ *                                    Vercel routes /api calls to /api/index.py via vercel.json rewrites.
  *
- * - Vercel + Render (split): VITE_API_BASE_URL = https://your-backend.onrender.com
- *                            All API calls are made directly to the Render backend
+ * - Vercel / Netlify + Remote API:  VITE_API_BASE_URL set (e.g. https://your-backend.onrender.com or koyeb)
  *
- * - Local Development:       VITE_API_BASE_URL is empty → Vite proxy handles /api
+ * - Local Development (Vite Dev):   VITE_API_BASE_URL is empty → relative paths proxied to 127.0.0.1:8000 by Vite
  *
  * Usage:
  *   import { apiUrl, API_BASE, getStaticUrl } from '../lib/api'
  */
 
-const isRemoteProduction =
-  typeof window !== 'undefined' &&
-  !window.location.hostname.includes('localhost') &&
-  !window.location.hostname.includes('127.0.0.1')
+const envApiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
+const envKoyebUrl = (import.meta.env.VITE_KOYEB_URL as string | undefined)?.trim()
 
-const defaultBaseUrl = isRemoteProduction
-  ? 'https://bridgeguardian-backend.onrender.com'
-  : 'http://127.0.0.1:8000'
+// If explicitly provided via VITE_API_BASE_URL or VITE_KOYEB_URL, use that.
+// Otherwise, default to empty string "" to use relative path /api/v1 (works for Vercel All-In-One & Vite Dev Proxy).
+const VITE_API_BASE_URL = envApiBase || envKoyebUrl || ''
 
-const VITE_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) || defaultBaseUrl
-
-export const API_BASE = `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1`
+export const API_BASE = VITE_API_BASE_URL ? `${VITE_API_BASE_URL.replace(/\/$/, '')}/api/v1` : '/api/v1'
 
 /**
  * Returns a fully-qualified URL for the given API path.
@@ -53,4 +48,3 @@ export function getStaticUrl(path: string): string {
 }
 
 export default apiUrl
-

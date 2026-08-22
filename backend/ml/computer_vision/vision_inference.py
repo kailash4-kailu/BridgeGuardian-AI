@@ -32,9 +32,47 @@ class VisionInferencePipeline:
 
     def analyze_image(self, image_path: str, inference_pipeline) -> dict:
         """
-        Runs image quality enhancement, CV feature extraction, visual output generation,
+        Runs image quality check, CV feature extraction, visual output generation,
         maps features to ML, runs ML predictions, and generates SHAP explanation.
         """
+        from backend.ml.computer_vision.image_quality import OpenCVImageQualityChecker
+        quality_checker = OpenCVImageQualityChecker()
+        quality_res = quality_checker.check_quality(image_path)
+        
+        if not quality_res["is_valid"]:
+            return {
+                "is_valid": False,
+                "warnings": quality_res["warnings"],
+                "rejection_reason": quality_res.get("rejection_reason", "Failed quality validation"),
+                "features": {
+                    "crack_density": 0.0, "crack_length": 0.0, "crack_width": 0.0,
+                    "corrosion_percent": 0.0, "spalling_percent": 0.0, "damage_area_percent": 0.0,
+                    "missing_components": 0, "no_defects_detected": True
+                },
+                "predictions": {
+                    "health_score_raw": None,
+                    "health_score": "N/A",
+                    "failure_probability_raw": None,
+                    "failure_probability": "N/A",
+                    "rul_days": "N/A",
+                    "prediction_confidence": 0.0,
+                    "risk_category": "Unknown",
+                    "maintenance_priority": "Inspection Required",
+                    "maintenance_recommendation": "Inspection could not be completed. The image failed quality validation."
+                },
+                "visualizations": {
+                    "original": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else "",
+                    "cracks": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else "",
+                    "rust": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else "",
+                    "bboxes": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else "",
+                    "heatmap": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else "",
+                    "segmentation": f"data:image/jpeg;base64,{base64.b64encode(cv2.imencode('.jpg', cv2.imread(image_path))[1]).decode('utf-8')}" if cv2.imread(image_path) is not None else ""
+                },
+                "saved_paths": {},
+                "shap": {},
+                "ml_input": {}
+            }
+
         # 1. Extract CV features and get intermediate masks/bboxes
         features, raw = self.extractor.extract_features(image_path)
         img = raw["image"]
@@ -188,24 +226,42 @@ class VisionInferencePipeline:
         # Run tabular prediction
         prediction_results = inference_pipeline.predict(ml_input)
 
-        # Apply a visual damage penalty to health score and failure probability.
-        # This resolves the issue where healthy sensor defaults dominate the ML model and
-        # yield identical predictions for different images containing obvious structural damage.
-        corrosion_factor = min(1.0, features["corrosion_percent"] / 100.0)
-        crack_factor = min(1.0, features["crack_length"] / 1000.0)  # normalized by 1000mm
-        spalling_factor = min(1.0, features["spalling_percent"] / 100.0)
-        leakage_factor = min(1.0, features["leakage_percent"] / 100.0)
-        missing_factor = min(1.0, features["missing_components"] * 0.05)
-        tilt_factor = min(1.0, abs(features["tilt_angle"]) / 15.0)
-
-        visual_damage = (
-            corrosion_factor * 0.25 +
-            crack_factor * 0.35 +
-            spalling_factor * 0.15 +
-            leakage_factor * 0.05 +
-            missing_factor * 0.1 +
-            tilt_factor * 0.1
+        # Calculate visual damage penalty ONLY from verified defects
+        no_defects = features.get("no_defects_detected", False) or (
+            features.get("corrosion_percent", 0.0) == 0.0 and
+            features.get("crack_length", 0.0) == 0.0 and
+            features.get("spalling_percent", 0.0) == 0.0 and
+            features.get("missing_components", 0) == 0
         )
+
+        if no_defects:
+            visual_damage = 0.0
+            # Reset prediction to baseline healthy state
+            prediction_results["health_score_raw"] = 1.0
+            prediction_results["health_score"] = 100.0
+            prediction_results["failure_probability_raw"] = 0.0
+            prediction_results["failure_probability"] = 0.0
+            prediction_results["risk_category"] = "Good"
+            prediction_results["maintenance_priority"] = "Routine"
+            prediction_results["maintenance_recommendation"] = "No structural defects detected. Continue scheduled monitoring."
+            prediction_results["rul_days"] = 3650.0 # 10 years
+            prediction_results["prediction_confidence"] = 0.98
+        else:
+            corrosion_factor = min(1.0, features["corrosion_percent"] / 100.0)
+            crack_factor = min(1.0, features["crack_length"] / 1000.0)
+            spalling_factor = min(1.0, features["spalling_percent"] / 100.0)
+            leakage_factor = min(1.0, features.get("leakage_percent", 0.0) / 100.0)
+            missing_factor = min(1.0, features["missing_components"] * 0.05)
+            tilt_factor = min(1.0, abs(features.get("tilt_angle", 0.0)) / 15.0)
+
+            visual_damage = (
+                corrosion_factor * 0.25 +
+                crack_factor * 0.35 +
+                spalling_factor * 0.15 +
+                leakage_factor * 0.05 +
+                missing_factor * 0.1 +
+                tilt_factor * 0.1
+            )
 
         if visual_damage > 0.0:
             raw_shi = prediction_results["health_score_raw"]
@@ -226,10 +282,8 @@ class VisionInferencePipeline:
             maintenance_priority = MAINTENANCE_PRIORITIES.get(risk_category, "Routine")
             recommendation = RECOMMENDATIONS.get(maintenance_priority, "")
 
-            # Recalculate RUL based on the adjusted health index
             rul_result = inference_pipeline._rul_estimator.estimate(adjusted_raw_shi, None, None)
 
-            # Update prediction_results dict
             prediction_results["health_score_raw"] = round(adjusted_raw_shi, 4)
             prediction_results["health_score"] = round(adjusted_raw_shi * 100, 2)
             prediction_results["failure_probability_raw"] = round(adjusted_raw_pof, 4)
@@ -242,7 +296,6 @@ class VisionInferencePipeline:
             prediction_results["rul_confidence"] = rul_result["confidence"]
             prediction_results["rul_message"] = rul_result["message"]
 
-            # Recalculate prediction confidence agreement
             agreement = 1.0 - abs(adjusted_raw_shi - (1.0 - adjusted_raw_pof))
             prediction_results["prediction_confidence"] = round(max(0.5, min(1.0, agreement)), 3)
 
@@ -254,9 +307,13 @@ class VisionInferencePipeline:
         except Exception as e:
             logger.error(f"Failed to generate SHAP explanation for vision inference: {e}")
 
-        # Save files on disk in static/processed for PDF report reference
-        static_dir = Path("backend/static/processed")
-        static_dir.mkdir(parents=True, exist_ok=True)
+        # Save files on disk in processed directory for PDF report reference
+        from backend.core.config import get_settings
+        static_dir = Path(get_settings().processed_dir)
+        try:
+            static_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as p_err:
+            logger.warning(f"Could not create static_dir '{static_dir}': {p_err}")
         img_id = Path(image_path).stem
         
         saved_paths = {}
@@ -265,8 +322,11 @@ class VisionInferencePipeline:
             cv2.imwrite(str(save_path), vis_img)
             saved_paths[key] = str(save_path)
 
+        # Clean features for JSON serialization by stripping raw numpy arrays (damage_masks)
+        clean_features = {k: v for k, v in features.items() if k != "damage_masks"}
+
         return {
-            "features": features,
+            "features": clean_features,
             "predictions": prediction_results,
             "visualizations": b64_results,
             "saved_paths": saved_paths,

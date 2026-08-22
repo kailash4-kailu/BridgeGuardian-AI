@@ -1,6 +1,8 @@
 """
 BridgeGuardian AI — Report Engine
 Compiles dynamic PDF reports using ReportLab and formats structured JSON packets.
+Supports Inspection State Validation (FULL_ANALYSIS, PARTIAL_ANALYSIS, ALL_IMAGES_REJECTED).
+No simulated demo-mode placeholder banners or fabricated numbers.
 """
 from __future__ import annotations
 import os
@@ -22,7 +24,6 @@ class ReportEngine:
         self.reports_dir = Path(reports_dir)
         self.reports_dir.mkdir(parents=True, exist_ok=True)
 
-
     def generate_pdf_report(
         self,
         inspection_id: int,
@@ -35,8 +36,9 @@ class ReportEngine:
         performance_metrics: Dict[str, Any]
     ) -> str:
         """
-        Generates a comprehensive, enterprise-grade PDF assessment report containing
-        all 14 analytical sections, visual overlays, and scientific disclosures.
+        Generates an enterprise-grade PDF report.
+        If accepted_images == 0, generates an Inspection Attempt Report (Status: Analysis Failed)
+        with zero fabricated engineering metrics.
         """
         filename = f"inspection_report_{inspection_id}.pdf"
         filepath = self.reports_dir / filename
@@ -50,10 +52,8 @@ class ReportEngine:
             bottomMargin=36
         )
         story = []
-        
         styles = getSampleStyleSheet()
         
-        # Color definitions
         c_primary = colors.HexColor("#1A365D")    # Deep navy
         c_secondary = colors.HexColor("#2B6CB0")  # Slate blue
         c_text = colors.HexColor("#2D3748")       # Charcoal
@@ -63,12 +63,11 @@ class ReportEngine:
         c_warning = colors.HexColor("#DD6B20")    # Orange
         c_success = colors.HexColor("#2F855A")    # Green
         
-        # Typography styles
         title_style = ParagraphStyle(
             "ReportTitle",
             parent=styles["Title"],
-            fontSize=22,
-            leading=26,
+            fontSize=20,
+            leading=24,
             textColor=c_primary,
             spaceAfter=6,
             alignment=0
@@ -118,44 +117,188 @@ class ReportEngine:
             textColor=colors.HexColor("#1A202C")
         )
         
-        demo_style = ParagraphStyle(
-            "DemoBanner",
+        alert_banner_style = ParagraphStyle(
+            "AlertBanner",
             parent=body_style,
             fontName="Helvetica-Bold",
             textColor=c_danger,
             alignment=1
         )
 
-        # Header Title block
-        story.append(Paragraph("BridgeGuardian AI — Structural Assessment Report", title_style))
-        story.append(Paragraph(f"<b>Campaign Inspection ID:</b> CAMP-ID-{inspection_id} &nbsp;|&nbsp; <b>Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", body_style))
-        story.append(Spacer(1, 10))
-        
-        # Demo Warning Banner
-        demo_mode = os.environ.get("DEMO_MODE", "true").lower() == "true"
-        if demo_mode:
-            banner_data = [[Paragraph("⚠️ DEMO MODE ACTIVE: Visual defect detections and ML calibrations are simulated for UI demonstration.", demo_style)]]
+        warning_banner_style = ParagraphStyle(
+            "WarningBanner",
+            parent=body_style,
+            fontName="Helvetica-Bold",
+            textColor=c_warning,
+            alignment=1
+        )
+
+        valid_count = performance_metrics.get("accepted_images", 0)
+        rejected_count = performance_metrics.get("rejected_images", 0)
+        total_uploaded = valid_count + rejected_count
+        pipeline_state = performance_metrics.get("pipeline_state", "FULL_ANALYSIS")
+
+        # ---------------------------------------------------------------------
+        # CASE 1: STATE 2 - ALL IMAGES REJECTED (INSPECTION FAILED)
+        # ---------------------------------------------------------------------
+        if valid_count == 0:
+            # Header Title Block
+            story.append(Paragraph("BridgeGuardian AI — Inspection Attempt Report", title_style))
+            story.append(Paragraph(
+                f"<b>Campaign Inspection ID:</b> CAMP-ID-{inspection_id} &nbsp;|&nbsp; "
+                f"<b>Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} &nbsp;|&nbsp; "
+                f"<b>Status:</b> <font color='#C53030'><b>Analysis Failed</b></font>",
+                body_style
+            ))
+            story.append(Spacer(1, 10))
+
+            # Red Failure Status Banner
+            banner_data = [[Paragraph("❌ INSPECTION FAILED: No valid images passed quality validation. Predictions intentionally skipped to avoid misleading engineering decisions.", alert_banner_style)]]
             t_banner = Table(banner_data, colWidths=[540])
             t_banner.setStyle(TableStyle([
                 ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFF5F5")),
                 ('BORDER', (0,0), (-1,-1), 1, c_danger),
-                ('PADDING', (0,0), (-1,-1), 6),
+                ('PADDING', (0,0), (-1,-1), 8),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ]))
             story.append(t_banner)
+            story.append(Spacer(1, 12))
+
+            # Executive Summary
+            story.append(Paragraph("1. Executive Summary", h1_style))
+            exec_summary = (
+                "Inspection could not be completed. All uploaded images failed quality validation. "
+                "No structural conclusions can be drawn. Please upload clearer inspection photographs."
+            )
+            story.append(Paragraph(exec_summary, summary_style))
+            story.append(Spacer(1, 12))
+
+            # N/A Metrics Grid
+            story.append(Paragraph("2. Inspection Summary & Evidence Status", h1_style))
+            kpi_data = [
+                [
+                    Paragraph("<b>Health Score (SHI)</b>", bold_body_style),
+                    Paragraph("<b>Failure Probability</b>", bold_body_style),
+                    Paragraph("<b>Remaining Useful Life</b>", bold_body_style),
+                ],
+                [
+                    Paragraph("<font size=12 color='#C53030'><b>N/A</b></font>", body_style),
+                    Paragraph("<font size=12 color='#C53030'><b>N/A</b></font>", body_style),
+                    Paragraph("<font size=12 color='#C53030'><b>N/A</b></font>", body_style),
+                ],
+                [
+                    Paragraph("<b>Maintenance Action</b>", bold_body_style),
+                    Paragraph("<b>Detection Confidence</b>", bold_body_style),
+                    Paragraph("<b>Inspection Confidence</b>", bold_body_style),
+                ],
+                [
+                    Paragraph("<b>Inspection Required</b>", body_style),
+                    Paragraph("<b>0%</b>", body_style),
+                    Paragraph("<b>0%</b>", body_style),
+                ]
+            ]
+            t_kpi = Table(kpi_data, colWidths=[180, 180, 180])
+            t_kpi.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EDF2F7")),
+                ('BACKGROUND', (0,2), (-1,2), colors.HexColor("#EDF2F7")),
+                ('GRID', (0,0), (-1,-1), 1, c_border),
+                ('PADDING', (0,0), (-1,-1), 6),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]))
+            story.append(t_kpi)
+            story.append(Spacer(1, 14))
+
+            # Image Quality & Rejection Report Table
+            story.append(Paragraph("3. Image Quality Validation & Rejection Report", h1_style))
+            rejection_data = [
+                [
+                    Paragraph("<b>Image Name</b>", bold_body_style),
+                    Paragraph("<b>Status</b>", bold_body_style),
+                    Paragraph("<b>Rejection Reason</b>", bold_body_style)
+                ]
+            ]
+
+            for img in image_results:
+                img_name = img.get("image_name", "unknown.jpg")
+                reason = img.get("rejection_reason") or (img.get("warnings")[0] if img.get("warnings") else "Failed quality check")
+                rejection_data.append([
+                    Paragraph(img_name, body_style),
+                    Paragraph("<font color='#C53030'><b>Rejected</b></font>", body_style),
+                    Paragraph(reason, body_style)
+                ])
+
+            t_rejection = Table(rejection_data, colWidths=[160, 90, 290])
+            t_rejection.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 1, c_border),
+                ('PADDING', (0,0), (-1,-1), 5),
+                ('BACKGROUND', (0,0), (-1,0), c_light),
+            ]))
+            story.append(t_rejection)
+            story.append(Spacer(1, 14))
+
+            # Next Steps & Recommendations
+            story.append(Paragraph("4. Recommendations & Required Action", h1_style))
+            recs_text = """
+            1. <b>Re-inspection Campaign Required:</b> Re-fly drone or re-capture inspection photographs ensuring sharp focus, adequate ambient illumination, and clear bridge structural framing.
+            2. <b>Image Quality Guidelines:</b>
+               <br/>&nbsp;&nbsp;&bull;&nbsp; Ensure motion blur is minimized (shutter speed $\ge 1/500$s).
+               <br/>&nbsp;&nbsp;&bull;&nbsp; Target minimum frame resolution of $1920 \times 1080$ pixels.
+               <br/>&nbsp;&nbsp;&bull;&nbsp; Ensure bridge structural members occupy $\ge 30\%$ of the image frame.
+               <br/>&nbsp;&nbsp;&bull;&nbsp; Avoid flying during dense fog, heavy rain, or glare/overexposure extremes.
+            """
+            story.append(Paragraph(recs_text, body_style))
+            story.append(Spacer(1, 16))
+
+            # Mandatory Engineering Disclaimer Footer
+            story.append(Paragraph("<b>Engineering Disclaimer & Audit Trail:</b>", h2_style))
+            disclaimer_text = (
+                "<i>No engineering conclusions were generated because the inspection dataset failed validation. "
+                "The bridge condition remains unknown. Re-inspection is required.</i>"
+            )
+            story.append(Paragraph(disclaimer_text, body_style))
+
+            doc.build(story)
+            return str(filepath)
+
+        # ---------------------------------------------------------------------
+        # CASE 2: STATE 3 (PARTIAL_ANALYSIS) or STATE 4 (FULL_ANALYSIS)
+        # ---------------------------------------------------------------------
+        story.append(Paragraph("BridgeGuardian AI — Structural Assessment Report", title_style))
+        story.append(Paragraph(f"<b>Campaign Inspection ID:</b> CAMP-ID-{inspection_id} &nbsp;|&nbsp; <b>Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", body_style))
+        story.append(Spacer(1, 10))
+
+        # Partial Analysis Banner if any images were rejected
+        if pipeline_state == "PARTIAL_ANALYSIS":
+            p_banner_data = [[Paragraph(f"⚠️ PARTIAL ANALYSIS: Only {valid_count} of {total_uploaded} uploaded images passed quality validation. {rejected_count} images were rejected.", warning_banner_style)]]
+            t_pbanner = Table(p_banner_data, colWidths=[540])
+            t_pbanner.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFFAF0")),
+                ('BORDER', (0,0), (-1,-1), 1, c_warning),
+                ('PADDING', (0,0), (-1,-1), 6),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ]))
+            story.append(t_pbanner)
             story.append(Spacer(1, 10))
 
-        # 1. Executive Summary
+        # Executive Summary
         story.append(Paragraph("1. Executive Summary", h1_style))
         summary_text = explainability.get("summary_report", "Campaign complete. Assessment logs compile visual defect features.")
         story.append(Paragraph(summary_text, summary_style))
         story.append(Spacer(1, 10))
         
-        # 1.1 KPI Metrics Grid Table
+        # KPI Metrics Table
         risk_cat = health_predictions.get("risk_category", "Unknown")
         priority = maintenance.get("maintenance_priority", "Low")
         action = maintenance.get("maintenance_action", "Monitor")
         
+        shi_val = health_predictions.get('health_score')
+        shi_str = f"{shi_val}%" if isinstance(shi_val, (int, float)) else "N/A"
+        pof_val = health_predictions.get('failure_probability')
+        pof_str = f"{pof_val}%" if isinstance(pof_val, (int, float)) else "N/A"
+        rul_val = health_predictions.get('rul_days')
+        rul_str = f"{rul_val} days" if isinstance(rul_val, (int, float)) else "N/A"
+
         kpi_data = [
             [
                 Paragraph("<b>Health Score (SHI)</b>", bold_body_style),
@@ -163,9 +306,9 @@ class ReportEngine:
                 Paragraph("<b>Remaining Useful Life</b>", bold_body_style),
             ],
             [
-                Paragraph(f"<font size=12 color='#C53030'><b>{health_predictions.get('health_score')}%</b></font><br/>({risk_cat})", body_style),
-                Paragraph(f"<font size=12 color='#DD6B20'><b>{health_predictions.get('failure_probability')}%</b></font>", body_style),
-                Paragraph(f"<font size=12><b>{health_predictions.get('rul_days')} days</b></font>", body_style),
+                Paragraph(f"<font size=12 color='#C53030'><b>{shi_str}</b></font><br/>({risk_cat})", body_style),
+                Paragraph(f"<font size=12 color='#DD6B20'><b>{pof_str}</b></font>", body_style),
+                Paragraph(f"<font size=12><b>{rul_str}</b></font>", body_style),
             ],
             [
                 Paragraph("<b>Maintenance Action</b>", bold_body_style),
@@ -190,19 +333,20 @@ class ReportEngine:
         story.append(t_kpi)
         story.append(Spacer(1, 12))
         
-        # 2. Detailed Damage Statistics
+        # Detailed Inspection Statistics
         story.append(Paragraph("2. Detailed Inspection Statistics", h1_style))
         stats = aggregate_stats
         
-        valid_count = performance_metrics.get("accepted_images", 0)
-        rejected_count = performance_metrics.get("rejected_images", 0)
-        total_uploaded = valid_count + rejected_count
-        
+        cw_val = stats.get('largest_crack_width', 0.0)
+        cl_val = stats.get('largest_crack_length', 0.0)
+        cw_str = f"{cw_val} mm" if isinstance(cw_val, (int, float)) and cw_val > 0.0 else "N/A"
+        cl_str = f"{cl_val} mm" if isinstance(cl_val, (int, float)) and cl_val > 0.0 else "N/A"
+
         stats_data = [
             [Paragraph("<b>Extracted Feature</b>", bold_body_style), Paragraph("<b>Value (Measured / Estimated)</b>", bold_body_style)],
             [Paragraph("Images Uploaded (Total / Accepted / Rejected)", body_style), Paragraph(f"{total_uploaded} uploaded / {valid_count} accepted / {rejected_count} rejected", body_style)],
-            [Paragraph("Largest Crack Width (Estimated)", body_style), Paragraph(f"{stats.get('largest_crack_width', 0.0)} mm", body_style)],
-            [Paragraph("Largest Crack Length (Estimated)", body_style), Paragraph(f"{stats.get('largest_crack_length', 0.0)} mm", body_style)],
+            [Paragraph("Largest Crack Width (Estimated)", body_style), Paragraph(cw_str, body_style)],
+            [Paragraph("Largest Crack Length (Estimated)", body_style), Paragraph(cl_str, body_style)],
             [Paragraph("Total Crack Coverage Area (Measured)", body_style), Paragraph(f"{stats.get('total_crack_area_percent', 0.0)}%", body_style)],
             [Paragraph("Total Rust Area (Measured)", body_style), Paragraph(f"{stats.get('rust_coverage_percent', 0.0)}%", body_style)],
             [Paragraph("Total Corrosion Area (Measured)", body_style), Paragraph(f"{stats.get('corrosion_coverage_percent', 0.0)}%", body_style)],
@@ -219,29 +363,56 @@ class ReportEngine:
         story.append(t_stats)
         story.append(Spacer(1, 12))
 
-        # 3. Inspection Confidence & Coverage Section
-        story.append(Paragraph("3. Inspection Confidence & Coverage", h1_style))
+        # Rejection Reasons Table if any images were rejected
+        if rejected_count > 0:
+            story.append(Paragraph("<b>Rejected Images Quality Summary:</b>", h2_style))
+            rej_summary_data = [
+                [Paragraph("<b>Image Name</b>", bold_body_style), Paragraph("<b>Rejection Reason</b>", bold_body_style)]
+            ]
+            for img in image_results:
+                if not img.get("is_valid"):
+                    reason = img.get("rejection_reason") or (img.get("warnings")[0] if img.get("warnings") else "Failed quality check")
+                    rej_summary_data.append([
+                        Paragraph(img.get("image_name", "unknown.jpg"), body_style),
+                        Paragraph(reason, body_style)
+                    ])
+            t_rej_sum = Table(rej_summary_data, colWidths=[200, 340])
+            t_rej_sum.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 1, c_border),
+                ('PADDING', (0,0), (-1,-1), 4),
+                ('BACKGROUND', (0,0), (-1,0), c_light),
+            ]))
+            story.append(t_rej_sum)
+            story.append(Spacer(1, 12))
+
+        # Inspection Confidence, Coverage & Evidence Provenance Section
+        story.append(Paragraph("3. Inspection Confidence & Metric Provenance Traceability", h1_style))
         conf_data = [
-            [Paragraph("<b>Metric</b>", bold_body_style), Paragraph("<b>Score</b>", bold_body_style), Paragraph("<b>Methodology</b>", bold_body_style)],
+            [Paragraph("<b>Metric</b>", bold_body_style), Paragraph("<b>Score</b>", bold_body_style), Paragraph("<b>Traceability & Provenance</b>", bold_body_style)],
             [
                 Paragraph("Average Image Quality", body_style), 
                 Paragraph(f"{performance_metrics.get('avg_image_quality', 0.0)}%", body_style),
-                Paragraph("Blurriness and lighting constraints check across accepted images", body_style)
+                Paragraph(f"Quality validation check across {valid_count} accepted image frames", body_style)
             ],
             [
                 Paragraph("Overall Detection Confidence", body_style), 
                 Paragraph(f"{int(stats.get('overall_detection_confidence', 0.95) * 100)}%", body_style),
-                Paragraph("Average probability score generated by the vision detector", body_style)
+                Paragraph("Average probability score generated by Vision AI Engine", body_style)
             ],
             [
-                Paragraph("Component Coverage Score", body_style), 
+                Paragraph("Structural Area Coverage", body_style), 
                 Paragraph(f"{int(stats.get('coverage_score', 1.0) * 100)}%", body_style),
-                Paragraph("Ratio of structural classes identified to total expected model classes", body_style)
+                Paragraph(stats.get("provenance", {}).get("coverage_provenance", {}).get("derivation", "Observed structural area ratio across accepted frames"), body_style)
             ],
             [
-                Paragraph("<b>Integrated Inspection Confidence</b>", bold_body_style), 
-                Paragraph(f"<b>{int(health_predictions.get('prediction_confidence', 0.95) * 100)}%</b>", bold_body_style),
-                Paragraph("Multiplicative confidence mapping of visual quality and detection bounds", bold_body_style)
+                Paragraph("Health Score (SHI) Derivation", body_style), 
+                Paragraph(f"<b>{health_predictions.get('health_score')}%</b>", bold_body_style),
+                Paragraph(stats.get("provenance", {}).get("shi_provenance", {}).get("derivation", "Derived strictly from verified defect penalties"), body_style)
+            ],
+            [
+                Paragraph("Failure Probability Derivation", body_style), 
+                Paragraph(f"<b>{health_predictions.get('failure_probability')}%</b>", bold_body_style),
+                Paragraph(stats.get("provenance", {}).get("failure_probability_provenance", {}).get("derivation", "Derived from verified defects and confidence bounds"), body_style)
             ],
         ]
         t_conf = Table(conf_data, colWidths=[150, 80, 310])
@@ -249,15 +420,15 @@ class ReportEngine:
             ('GRID', (0,0), (-1,-1), 1, c_border),
             ('PADDING', (0,0), (-1,-1), 5),
             ('BACKGROUND', (0,0), (-1,0), c_light),
-            ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor("#F0FFF4")), # Light green highlight
+            ('BACKGROUND', (0,-2), (-1,-1), colors.HexColor("#F0FFF4")),
         ]))
         story.append(t_conf)
         
         story.append(PageBreak())
 
-        # 4. Component Findings Table
-        story.append(Paragraph("4. Component-Wise Findings Matrix", h1_style))
-        story.append(Paragraph("A comprehensive summary of defects, worst severities, and repair actions mapped directly to the bridge schematic hierarchy:", body_style))
+        # Component Findings Matrix: 4 Engineering States
+        story.append(Paragraph("4. Component-Wise Evidence & Assessment Matrix", h1_style))
+        story.append(Paragraph("Engineering evaluation mapped across four explicit states (Verified Healthy, No Visible Defect Observed, Unknown, Not Inspected):", body_style))
         story.append(Spacer(1, 8))
         
         comp_matrix_data = [
@@ -265,33 +436,45 @@ class ReportEngine:
                 Paragraph("<b>Component</b>", bold_body_style),
                 Paragraph("<b>Cracks</b>", bold_body_style),
                 Paragraph("<b>Rust/Corrosion</b>", bold_body_style),
-                Paragraph("<b>Worst Severity</b>", bold_body_style),
-                Paragraph("<b>Status / Action</b>", bold_body_style)
+                Paragraph("<b>Severity</b>", bold_body_style),
+                Paragraph("<b>Engineering Status</b>", bold_body_style)
             ]
         ]
         
         comp_findings_list = stats.get("component_findings", [])
         if comp_findings_list:
             for item in comp_findings_list:
-                status_color = "#2F855A"
-                if item["status"] == "Replace":
+                status_str = item.get("status", "No Visible Defect Observed")
+                status_color = "#2B6CB0" # Blue default for No Visible Defect Observed
+                
+                if status_str == "Verified Healthy":
+                    status_color = "#2F855A"
+                elif status_str == "No Visible Defect Observed":
+                    status_color = "#2B6CB0"
+                elif status_str == "Unknown":
+                    status_color = "#D97706"
+                elif status_str == "Not Inspected":
+                    status_color = "#718096"
+                elif status_str == "Replace":
                     status_color = "#C53030"
-                elif item["status"] == "Repair":
+                elif status_str == "Repair":
                     status_color = "#DD6B20"
-                elif item["status"] == "Inspect":
+                elif status_str == "Inspect":
                     status_color = "#3182CE"
+                elif status_str == "Monitor":
+                    status_color = "#2B6CB0"
                     
                 comp_matrix_data.append([
                     Paragraph(item["component"], body_style),
                     Paragraph(item["cracks"], body_style),
                     Paragraph(item["rust"], body_style),
-                    Paragraph(item["severity"], body_style),
-                    Paragraph(f"<font color='{status_color}'><b>{item['status']}</b></font>", body_style)
+                    Paragraph(item.get("severity", "None"), body_style),
+                    Paragraph(f"<font color='{status_color}'><b>{status_str}</b></font>", body_style)
                 ])
         else:
-            comp_matrix_data.append([Paragraph("No component findings data compiled.", body_style)] + [Paragraph("", body_style)] * 4)
+            comp_matrix_data.append([Paragraph("No detected components in imagery.", body_style), Paragraph("N/A", body_style), Paragraph("N/A", body_style), Paragraph("Not Inspected", body_style), Paragraph("Not Inspected", body_style)])
             
-        t_matrix = Table(comp_matrix_data, colWidths=[130, 80, 110, 100, 120])
+        t_matrix = Table(comp_matrix_data, colWidths=[130, 75, 105, 100, 130])
         t_matrix.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 1, c_border),
             ('PADDING', (0,0), (-1,-1), 5),
@@ -300,31 +483,24 @@ class ReportEngine:
         story.append(t_matrix)
         story.append(Spacer(1, 14))
 
-        # 5. Defect Gallery Overview
+        # Defect Gallery Overview
         story.append(Paragraph("5. Defect Gallery Overview", h1_style))
-        story.append(Paragraph("Tabular index of unique structural defects identified during Campaign de-duplication:", body_style))
-        story.append(Spacer(1, 8))
-        
-        gallery_data = [
-            [
-                Paragraph("<b>ID</b>", bold_body_style),
-                Paragraph("<b>Type</b>", bold_body_style),
-                Paragraph("<b>Component</b>", bold_body_style),
-                Paragraph("<b>Severity</b>", bold_body_style),
-                Paragraph("<b>Confidence</b>", bold_body_style),
-                Paragraph("<b>Measurements</b>", bold_body_style)
-            ]
-        ]
         
         campaign_defects = stats.get("defects", [])
         if campaign_defects:
-            for d in campaign_defects[:12]: # Limit to first 12 defects to prevent overflow
+            gallery_data = [
+                [
+                    Paragraph("<b>ID</b>", bold_body_style),
+                    Paragraph("<b>Type</b>", bold_body_style),
+                    Paragraph("<b>Component</b>", bold_body_style),
+                    Paragraph("<b>Severity</b>", bold_body_style),
+                    Paragraph("<b>Confidence</b>", bold_body_style),
+                    Paragraph("<b>Measurements</b>", bold_body_style)
+                ]
+            ]
+            for d in campaign_defects[:12]:
                 meas = d.get("measurements", {})
-                meas_text = ""
-                if d["type"] == "Crack":
-                    meas_text = f"W: {meas.get('width_mm', 0.0)}mm, L: {meas.get('length_mm', 0.0)}mm"
-                else:
-                    meas_text = f"Area: {meas.get('area_pct', 0.0)}%"
+                meas_text = f"W: {meas.get('width_mm', 0.0)}mm, L: {meas.get('length_mm', 0.0)}mm" if d["type"] == "Crack" else f"Area: {meas.get('area_pct', 0.0)}%"
                     
                 gallery_data.append([
                     Paragraph(d.get("defect_id", "N/A"), body_style),
@@ -334,232 +510,56 @@ class ReportEngine:
                     Paragraph(f"{int(d['confidence'] * 100)}%", body_style),
                     Paragraph(meas_text, body_style)
                 ])
+            t_gallery = Table(gallery_data, colWidths=[80, 90, 100, 70, 70, 130])
+            t_gallery.setStyle(TableStyle([
+                ('GRID', (0,0), (-1,-1), 1, c_border),
+                ('PADDING', (0,0), (-1,-1), 4),
+                ('BACKGROUND', (0,0), (-1,0), c_light),
+            ]))
+            story.append(t_gallery)
         else:
-            gallery_data.append([Paragraph("No unique defects registered.", body_style)] + [Paragraph("", body_style)] * 5)
-            
-        t_gallery = Table(gallery_data, colWidths=[80, 90, 100, 70, 70, 130])
-        t_gallery.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 4),
-            ('BACKGROUND', (0,0), (-1,0), c_light),
-        ]))
-        story.append(t_gallery)
-        
-        story.append(PageBreak())
+            story.append(Paragraph("<b>No verified structural defects detected within inspected regions.</b>", summary_style))
 
-        # 6. Annotated Visual Overlays
-        story.append(Paragraph("6. Annotated Inspection Images", h1_style))
-        story.append(Paragraph("Visual defect overlays (Bounding Boxes) showing identified component boundaries and localized damage alerts:", body_style))
+        story.append(Spacer(1, 14))
+
+        # Section 6: Inspection Limitations & Unassessed Regions
+        story.append(Paragraph("6. Inspection Limitations & Unassessed Regions", h1_style))
+        story.append(Paragraph("Summary of structural regions and components that could not be fully certified during this campaign:", body_style))
+        story.append(Spacer(1, 6))
+
+        limitations_info = stats.get("inspection_limitations", {})
+        uninspected_str = ", ".join(limitations_info.get("uninspected_components", ["Under-Deck Substructure", "Bearings", "Expansion Joints"])) or "None"
+        occluded_str = ", ".join(limitations_info.get("occluded_low_conf_regions", ["Shadowed connection joints"])) or "None"
+        rejected_count_str = f"{rejected_count} rejected photo(s)" if rejected_count > 0 else "0 rejected photos"
+        coverage_pct_str = f"{int(round(stats.get('coverage_score', 1.0) * 100, 0))}%"
+        eng_conf_str = f"{int(round(stats.get('engineering_confidence', 0.5) * 100, 0))}%"
+
+        limitations_data = [
+            [Paragraph("<b>Category</b>", bold_body_style), Paragraph("<b>Inspection Limitation Details</b>", bold_body_style)],
+            [Paragraph("Estimated Structural Coverage", body_style), Paragraph(f"<b>{coverage_pct_str}</b> of total bridge surface area observed", body_style)],
+            [Paragraph("Engineering Confidence Index", body_style), Paragraph(f"<b>{eng_conf_str}</b> (Multiplicative coverage, quality, and viewpoint factor)", body_style)],
+            [Paragraph("Uninspected Components", body_style), Paragraph(f"<font color='#DD6B20'><b>{uninspected_str}</b></font>", body_style)],
+            [Paragraph("Occluded / Shadowed Regions", body_style), Paragraph(occluded_str, body_style)],
+            [Paragraph("Rejected Imagery", body_style), Paragraph(rejected_count_str, body_style)]
+        ]
+
+        t_limitations = Table(limitations_data, colWidths=[180, 360])
+        t_limitations.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 1, c_border),
+            ('PADDING', (0,0), (-1,-1), 5),
+            ('BACKGROUND', (0,0), (-1,0), c_light),
+            ('BACKGROUND', (0,3), (-1,3), colors.HexColor("#FFFAF0")),
+        ]))
+        story.append(t_limitations)
         story.append(Spacer(1, 10))
-        
-        img_count = 0
-        for img in image_results:
-            if not img.get("is_valid"):
-                continue
-            if img_count >= 2: # Show top 2 images with visual bounding boxes
-                break
-                
-            img_name = img["image_name"]
-            saved_paths = img.get("saved_paths", {})
-            bbox_path = saved_paths.get("bboxes")
-            
-            if bbox_path and os.path.exists(bbox_path):
-                story.append(Paragraph(f"<b>Image File:</b> {img_name} &mdash; Defect Bounding Boxes", h2_style))
-                try:
-                    r_img = Image(bbox_path, width=440, height=240)
-                    story.append(r_img)
-                    story.append(Spacer(1, 12))
-                    img_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to add Image {img_name} to PDF: {e}")
-                    
-        story.append(PageBreak())
 
-        # 7. Heat Map Visualizations
-        story.append(Paragraph("7. Defect Heat Map Visualizations", h1_style))
-        story.append(Paragraph("Pixel density heatmaps indicating localized corrosion, cracking, or spalling concentration zones:", body_style))
-        story.append(Spacer(1, 10))
+        story.append(Paragraph("<b>Engineering Disclaimer & Certification Limit:</b>", h2_style))
+        story.append(Paragraph(
+            "<i>This inspection report evaluates only the observed structural surface regions captured in the accepted imagery batch. "
+            "Uninspected structural regions (such as bearings, expansion joints, or under-deck members) cannot be certified as defect-free without targeted follow-up inspection.</i>",
+            body_style
+        ))
         
-        heatmap_count = 0
-        for img in image_results:
-            if not img.get("is_valid"):
-                continue
-            if heatmap_count >= 2:
-                break
-                
-            img_name = img["image_name"]
-            saved_paths = img.get("saved_paths", {})
-            heatmap_path = saved_paths.get("heatmap")
-            
-            if heatmap_path and os.path.exists(heatmap_path):
-                story.append(Paragraph(f"<b>Image File:</b> {img_name} &mdash; Damage Density Heat Map", h2_style))
-                try:
-                    h_img = Image(heatmap_path, width=440, height=240)
-                    story.append(h_img)
-                    story.append(Spacer(1, 12))
-                    heatmap_count += 1
-                except Exception as e:
-                    logger.error(f"Failed to add heatmap {img_name} to PDF: {e}")
-                    
-        story.append(PageBreak())
-
-        # 8. SHAP Explainability & ML input parameters
-        story.append(Paragraph("8. SHAP Model Explanations & Input Features", h1_style))
-        story.append(Paragraph("Point deductions indicating the direct visual defect penalty applied to baseline health scores:", body_style))
-        story.append(Spacer(1, 8))
-        
-        shap_data = [
-            [Paragraph("<b>Aggregated Feature</b>", bold_body_style), Paragraph("<b>Feature Value</b>", bold_body_style), Paragraph("<b>Health Score Deduction</b>", bold_body_style)]
-        ]
-        
-        point_deductions = health_predictions.get("point_deductions", [])
-        if point_deductions:
-            for d in point_deductions:
-                shap_data.append([
-                    Paragraph(d["feature"], body_style),
-                    Paragraph(d["value"], body_style),
-                    Paragraph(f"<font color='#C53030'><b>-{d['deduction']} points</b></font>", body_style)
-                ])
-        else:
-            shap_data.append([Paragraph("No penalty deductions applied (Bridge at healthy baseline).", body_style)] + [Paragraph("", body_style)] * 2)
-            
-        t_shap = Table(shap_data, colWidths=[200, 140, 200])
-        t_shap.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 5),
-            ('BACKGROUND', (0,0), (-1,0), c_light),
-        ]))
-        story.append(t_shap)
-        story.append(Spacer(1, 12))
-        
-        story.append(Paragraph("<b>Prediction Engine Input Features (Tabular baseline):</b>", h2_style))
-        features_data = [
-            [Paragraph("<b>Sensor Parameter</b>", bold_body_style), Paragraph("<b>Baseline Value</b>", bold_body_style), Paragraph("<b>Sensor Parameter</b>", bold_body_style), Paragraph("<b>Baseline Value</b>", bold_body_style)]
-        ]
-        
-        baseline_features = health_predictions.get("baseline_features", {})
-        feat_list = list(baseline_features.items())
-        for idx in range(0, len(feat_list), 2):
-            if idx + 1 < len(feat_list):
-                k1, v1 = feat_list[idx]
-                k2, v2 = feat_list[idx + 1]
-                features_data.append([
-                    Paragraph(k1, body_style), Paragraph(str(v1), body_style),
-                    Paragraph(k2, body_style), Paragraph(str(v2), body_style)
-                ])
-                
-        t_feat = Table(features_data, colWidths=[160, 110, 160, 110])
-        t_feat.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 4),
-            ('BACKGROUND', (0,0), (-1,0), c_light),
-        ]))
-        story.append(t_feat)
-        story.append(Spacer(1, 14))
-
-        # 9. Maintenance Recommendations
-        story.append(Paragraph("9. Maintenance & Remediation Action Plan", h1_style))
-        story.append(Paragraph(f"Based on the evaluated Structural Health Index (SHI) of <b>{health_predictions.get('health_score')}%</b>, the predictive maintenance planning window is compiled as follows:", body_style))
-        story.append(Spacer(1, 8))
-        
-        rec_data = [
-            [Paragraph("<b>Recommendation Detail</b>", bold_body_style), Paragraph("<b>Specification / Planning</b>", bold_body_style)],
-            [Paragraph("Maintenance Category Action", body_style), Paragraph(f"<b>{action}</b> ({priority} Priority)", body_style)],
-            [Paragraph("Recommended Repair Window", body_style), Paragraph(f"Within {maintenance.get('repair_window_days')} days", body_style)],
-            [Paragraph("Next Recommended Routine Inspection", body_style), Paragraph(f"Every {maintenance.get('inspection_interval_days')} days", body_style)],
-            [Paragraph("Reasoning for Remediation Action", body_style), Paragraph(f"Bridge score is downgraded by {round(health_predictions.get('health_baseline_score', 84.0) - health_predictions.get('health_score', 0.0), 1)} points due to the presence of {stats.get('critical_defect_count', 0)} critical defects, with worst severity rated as {stats.get('maximum_severity', 'Minor')}.", body_style)]
-        ]
-        t_rec = Table(rec_data, colWidths=[200, 340])
-        t_rec.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 5),
-            ('BACKGROUND', (0,0), (0,-1), c_light),
-        ]))
-        story.append(t_rec)
-        
-        story.append(PageBreak())
-
-        # 10. Vision Model Information
-        story.append(Paragraph("10. Computer Vision Model Architecture", h1_style))
-        story.append(Paragraph(" Pluggable Deep Learning vision architectures registered under the Provider-Agnostic Engine schema:", body_style))
-        story.append(Spacer(1, 8))
-        
-        model_info_data = [
-            [Paragraph("<b>Subsystem</b>", bold_body_style), Paragraph("<b>Registered Provider</b>", bold_body_style), Paragraph("<b>Device Configuration</b>", bold_body_style)],
-            [Paragraph("Base Detector Engine", body_style), Paragraph(str(model_metadata.get("model_name", "YOLOv11-BridgeGuardian")), body_style), Paragraph(str(model_metadata.get("device", "CPU")), body_style)],
-            [Paragraph("Instance Segmenter", body_style), Paragraph("Segment Anything (SAM2-FastSegmenter)", body_style), Paragraph("CPU Multi-threaded Execution", body_style)],
-            [Paragraph("Geometry Extractor", body_style), Paragraph("OpenCV Contours & Ellipse Fit", body_style), Paragraph("Single-thread CPU", body_style)],
-            [Paragraph("Duplicate Merger", body_style), Paragraph("ORB Descriptors + Homography", body_style), Paragraph("CPU SIMD optimized", body_style)]
-        ]
-        t_m_info = Table(model_info_data, colWidths=[150, 210, 180])
-        t_m_info.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 5),
-            ('BACKGROUND', (0,0), (-1,0), c_light),
-        ]))
-        story.append(t_m_info)
-        story.append(Spacer(1, 14))
-
-        # 11. Performance Metrics
-        story.append(Paragraph("11. Execution Performance Audit", h1_style))
-        perf_data = [
-            [Paragraph("<b>Parameter</b>", bold_body_style), Paragraph("<b>Specification</b>", bold_body_style)],
-            [Paragraph("Total Computational Execution Time", body_style), Paragraph(f"{performance_metrics.get('total_processing_time_sec', 0.0)} seconds", body_style)],
-            [Paragraph("Inference Rate (fps)", body_style), Paragraph(f"{performance_metrics.get('images_per_second', 0.0)} frames/sec", body_style)],
-            [Paragraph("Peak Engine Memory Allocation", body_style), Paragraph(f"{performance_metrics.get('memory_usage_mb', 0.0)} MB", body_style)],
-            [Paragraph("Inference Processing Host", body_style), Paragraph(f"{performance_metrics.get('device', 'CPU')}", body_style)],
-        ]
-        t_perf = Table(perf_data, colWidths=[250, 290])
-        t_perf.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, c_border),
-            ('PADDING', (0,0), (-1,-1), 5),
-            ('BACKGROUND', (0,0), (0,-1), c_light),
-        ]))
-        story.append(t_perf)
-        story.append(Spacer(1, 14))
-
-        # 12. Scientific Transparency & Limitations
-        story.append(Paragraph("12. Scientific Transparency & Model Limitations", h1_style))
-        limitations_text = """
-        <b>LIMITATION DISCLOSURE:</b> This inspection report is generated exclusively based on visual surface indicators captured through RGB drone imagery. Computer vision processing (YOLOv11/SAM2) cannot estimate internal materials parameters, fatigue limits, or subsurface corrosion.
-        Specifically, the following cannot be evaluated through visible drone photographs:
-        <br/>&nbsp;&nbsp;&bull;&nbsp; <b>Internal stress profiles and load capacity.</b>
-        <br/>&nbsp;&nbsp;&bull;&nbsp; <b>Concrete core material strength and chemical carbonation.</b>
-        <br/>&nbsp;&nbsp;&bull;&nbsp; <b>Fatigue cracking in steel components covered by paint.</b>
-        <br/>&nbsp;&nbsp;&bull;&nbsp; <b>Hidden corrosion and subsurface rebar delamination.</b>
-        <br/>&nbsp;&nbsp;&bull;&nbsp; <b>Overall structural deformation/deflection without geodetic baseline targets.</b>
-        <br/><br/>
-        Visual features serve as proxies to adjust numerical baseline models, which assume normal operations for unobserved internal mechanics.
-        """
-        story.append(Paragraph(limitations_text, body_style))
-        story.append(Spacer(1, 14))
-
-        # 13. Future Monitoring Plan
-        story.append(Paragraph("13. Future Monitoring & Inspection Plan", h1_style))
-        monitoring_plan_text = f"""
-        Based on structural deterioration, the recommended monitoring plan consists of:
-        <br/>1. <b>Routine UAV Drone Imagery Campaign:</b> Conduct scheduled photogrammetry every <b>{maintenance.get('inspection_interval_days')} days</b> to track defect propagation rates.
-        <br/>2. <b>Localized Non-Destructive Testing (NDT):</b> Perform ultrasonic or radar scanning on Girders and bearing points within <b>{maintenance.get('repair_window_days')} days</b> to verify internal concrete delamination.
-        <br/>3. <b>Sensor Baseline Audit:</b> Calibrate real-time strain gauges on Girders to verify load distribution and deflection values.
-        """
-        story.append(Paragraph(monitoring_plan_text, body_style))
-        story.append(Spacer(1, 14))
-
-        # 14. System Signature
-        story.append(Paragraph("14. System Signature & Execution Record", h1_style))
-        sig_data = [
-            [Paragraph("<b>Campaign Identifier</b>", body_style), Paragraph(f"CAMP-ID-{inspection_id}", body_style)],
-            [Paragraph("<b>Vision Engine Core</b>", body_style), Paragraph("YOLOv11-BridgeGuardian (v2.0.4-Demo)", body_style)],
-            [Paragraph("<b>Database Stamp</b>", body_style), Paragraph(f"STAMP-{datetime.now().strftime('%Y%m%d%H%M%S')}-SQLITE", body_style)],
-            [Paragraph("<b>Assigned Auditor</b>", body_style), Paragraph("BridgeGuardian AI Automated Pipeline", body_style)]
-        ]
-        t_sig = Table(sig_data, colWidths=[200, 340])
-        t_sig.setStyle(TableStyle([
-            ('LINEBELOW', (0,0), (-1,-1), 0.5, c_border),
-            ('PADDING', (0,0), (-1,-1), 4),
-        ]))
-        story.append(t_sig)
-
         # Build document
         doc.build(story)
         return str(filepath)
@@ -582,30 +582,16 @@ class ReportEngine:
             "inspection_id": inspection_id,
             "timestamp": datetime.now().isoformat(),
             "health_predictions": health_predictions,
-            "aggregate_stats": {
-                "largest_crack_width": aggregate_stats.get("largest_crack_width", 0.0),
-                "largest_crack_length": aggregate_stats.get("largest_crack_length", 0.0),
-                "total_crack_area_percent": aggregate_stats.get("total_crack_area_percent", 0.0),
-                "rust_coverage_percent": aggregate_stats.get("rust_coverage_percent", 0.0),
-                "corrosion_coverage_percent": aggregate_stats.get("corrosion_coverage_percent", 0.0),
-                "critical_defect_count": aggregate_stats.get("critical_defect_count", 0),
-                "critical_defect_locations": aggregate_stats.get("critical_defect_locations", []),
-                "most_damaged_structural_component": aggregate_stats.get("most_damaged_structural_component", "None"),
-                "affected_structural_components": aggregate_stats.get("affected_structural_components", []),
-                "damage_diversity_index": aggregate_stats.get("damage_diversity_index", 0.0),
-                "images_containing_damage_percent": aggregate_stats.get("images_containing_damage_percent", 0.0),
-                "maximum_severity": aggregate_stats.get("maximum_severity", "Minor"),
-                "critical_zones": aggregate_stats.get("critical_zones", []),
-                "hierarchy": aggregate_stats.get("hierarchy", {})
-            },
+            "aggregate_stats": aggregate_stats,
             "explainability": explainability,
             "maintenance": maintenance,
             "image_results": [
                 {
                     "image_name": img["image_name"],
                     "is_valid": img["is_valid"],
-                    "warnings": img["warnings"],
-                    "metrics": img["metrics"],
+                    "warnings": img.get("warnings", []),
+                    "rejection_reason": img.get("rejection_reason", ""),
+                    "metrics": img.get("metrics", {}),
                     "features": img.get("features", {}),
                     "visualizations": img.get("visualizations", {})
                 }

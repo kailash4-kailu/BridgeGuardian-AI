@@ -116,29 +116,39 @@ function App() {
   // Active Drone Campaign Record for Hero Header
   const [droneRecord, setDroneRecord] = useState<any | null>(null)
 
-  const activeHealthScore =
-    prediction?.health_score ??
-    visionPrediction?.predictions?.health_score ??
-    droneRecord?.health_score ??
-    null
+  const isDroneFailed = droneRecord && (droneRecord.status === 'failed' || droneRecord.health_score === null)
 
-  const activeFailureProbability =
-    prediction?.failure_probability ??
-    visionPrediction?.predictions?.failure_probability ??
-    droneRecord?.failure_probability ??
-    null
+  const activeHealthScore = isDroneFailed
+    ? null
+    : (activeTab === 'drone'
+        ? droneRecord?.health_score
+        : activeTab === 'vision'
+        ? visionPrediction?.predictions?.health_score
+        : prediction?.health_score) ?? null
 
-  const activeRulDays =
-    prediction?.rul_days ??
-    visionPrediction?.predictions?.rul_days ??
-    droneRecord?.rul_days ??
-    null
+  const activeFailureProbability = isDroneFailed
+    ? null
+    : (activeTab === 'drone'
+        ? droneRecord?.failure_probability
+        : activeTab === 'vision'
+        ? visionPrediction?.predictions?.failure_probability
+        : prediction?.failure_probability) ?? null
 
-  const activeRiskCategory =
-    prediction?.risk_category ??
-    visionPrediction?.predictions?.risk_category ??
-    droneRecord?.risk_category ??
-    null
+  const activeRulDays = isDroneFailed
+    ? null
+    : (activeTab === 'drone'
+        ? droneRecord?.rul_days
+        : activeTab === 'vision'
+        ? visionPrediction?.predictions?.rul_days
+        : prediction?.rul_days) ?? null
+
+  const activeRiskCategory = isDroneFailed
+    ? 'Failed'
+    : (activeTab === 'drone'
+        ? droneRecord?.risk_category
+        : activeTab === 'vision'
+        ? visionPrediction?.predictions?.risk_category
+        : prediction?.risk_category) ?? 'Standby'
 
   const isGlobalAnalyzing = isPredicting || isAnalyzing
 

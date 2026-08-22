@@ -19,10 +19,11 @@ from backend.core.models import InspectionRecord, InspectionDefect
 # Engines
 from backend.ml.computer_vision.detector import YOLODetector
 from backend.ml.computer_vision.segmentation import SAMSegmenter
-from backend.ml.computer_vision.feature_extractor import OpenCVFeatureExtractor
+from backend.ml.computer_vision.feature_extractor import ImageFeatureExtractor, OpenCVFeatureExtractor
 from backend.ml.computer_vision.image_quality import OpenCVImageQualityChecker
 from backend.ml.computer_vision.duplicate_merger import OpenCVDuplicateMerger
 from backend.ml.computer_vision.vision_engine import VisionEngine
+from backend.ml.computer_vision.evidence_graph import InspectionEvidenceGraph
 
 from backend.ml.structural.structural_engine import StructuralEngine
 from backend.ml.prediction.prediction_engine import PredictionEngine
@@ -84,7 +85,7 @@ class CampaignInspectionPipeline:
             logger.info("Initializing Vision AI Engine components...")
             detector = YOLODetector(weights_path=str(self.models_dir / "bridge_defects_yolo.pt"))
             segmenter = SAMSegmenter(weights_path=str(self.models_dir / "sam2.pt"))
-            extractor = OpenCVFeatureExtractor()
+            extractor = ImageFeatureExtractor()
             quality_checker = OpenCVImageQualityChecker()
             merger = OpenCVDuplicateMerger()
             
@@ -123,31 +124,222 @@ class CampaignInspectionPipeline:
                     record.progress = round(0.15 + (completed_count / total_imgs) * 0.55, 2)
                     db.commit()
                 
-            # 4. Merge duplicate overlapping defects
-            logger.info("De-duplicating overlapping defect detections...")
-            unique_defects = merger.merge_duplicates(image_results)
+            # Calculate batch quality validation statistics
+            valid_imgs = [r for r in image_results if r.get("is_valid", False)]
+            rejected_imgs = [r for r in image_results if not r.get("is_valid", False)]
+            accepted_count = len(valid_imgs)
+            rejected_count = len(rejected_imgs)
+            duration = time.time() - start_time
+            
+            # Determine Pipeline State
+            if total_imgs == 0:
+                pipeline_state = "NO_IMAGES"
+            elif accepted_count == 0:
+                pipeline_state = "ALL_IMAGES_REJECTED"
+            elif rejected_count > 0:
+                pipeline_state = "PARTIAL_ANALYSIS"
+            else:
+                pipeline_state = "FULL_ANALYSIS"
+
+            logger.info(f"Pipeline State: {pipeline_state} (Accepted: {accepted_count}, Rejected: {rejected_count})")
+
+            avg_quality = 0.0
+            if valid_imgs:
+                avg_quality = float(np.mean([r.get("metrics", {}).get("blur_score", 100) for r in valid_imgs]))
+            avg_quality_pct = min(100.0, round(avg_quality / 5.0, 1)) if avg_quality > 0 else 0.0
+
+            perf_metrics = {
+                "total_processing_time_sec": round(duration, 2),
+                "images_per_second": round(total_imgs / duration, 2) if duration > 0 else 0.0,
+                "accepted_images": accepted_count,
+                "rejected_images": rejected_count,
+                "pipeline_state": pipeline_state,
+                "avg_image_quality": avg_quality_pct,
+                "device": "CPU",
+                "memory_usage_mb": 142.5
+            }
+
+            model_metadata = {
+                "model_name": "YOLOv11-BridgeDefects / SAM2",
+                "version": "2026.08.05",
+                "device": "CPU",
+                "threshold": detector.confidence_threshold
+            }
+
+            report_engine = ReportEngine()
+
+            # PIPELINE GUARD: State 2 - ALL_IMAGES_REJECTED
+            if pipeline_state == "ALL_IMAGES_REJECTED" or pipeline_state == "NO_IMAGES":
+                logger.warning(f"Campaign #{inspection_id} HALTED: 0 images accepted. Skipping all downstream prediction engines.")
+                
+                health_predictions = {
+                    "health_score_raw": None,
+                    "health_score": "N/A",
+                    "failure_probability_raw": None,
+                    "failure_probability": "N/A",
+                    "rul_days": "N/A",
+                    "prediction_confidence": 0.0,
+                    "risk_category": "Unknown",
+                    "maintenance_priority": "Inspection Required",
+                    "maintenance_recommendation": "Re-inspection Required",
+                    "health_baseline_score": None,
+                    "baseline_features": {},
+                    "point_deductions": [],
+                    "penalties": []
+                }
+                
+                structural_res = {
+                    "defects": [],
+                    "hierarchy": {},
+                    "statistics": {
+                        "largest_crack_width": "N/A",
+                        "largest_crack_length": "N/A",
+                        "total_crack_area_percent": 0.0,
+                        "rust_coverage_percent": 0.0,
+                        "corrosion_coverage_percent": 0.0,
+                        "critical_defect_count": 0,
+                        "critical_defect_locations": [],
+                        "most_damaged_structural_component": "None",
+                        "affected_structural_components": [],
+                        "damage_diversity_index": 0.0,
+                        "images_containing_damage_percent": 0.0,
+                        "maximum_severity": "Unknown",
+                        "critical_zones": [],
+                        "coverage_score": 0.0,
+                        "overall_detection_confidence": 0.0,
+                        "component_findings": []
+                    }
+                }
+
+                maintenance_plan = {
+                    "maintenance_priority": "Inspection Required",
+                    "maintenance_action": "Re-inspection Required",
+                    "repair_window_days": "N/A",
+                    "inspection_interval_days": "N/A"
+                }
+
+                explainability_res = {
+                    "summary_report": (
+                        "Inspection could not be completed. All uploaded images failed quality validation. "
+                        "No structural conclusions can be drawn. Please upload clearer inspection photographs."
+                    )
+                }
+
+                pdf_path = report_engine.generate_pdf_report(
+                    inspection_id=inspection_id,
+                    health_predictions=health_predictions,
+                    aggregate_stats=structural_res["statistics"],
+                    explainability=explainability_res,
+                    maintenance=maintenance_plan,
+                    image_results=image_results,
+                    model_metadata=model_metadata,
+                    performance_metrics=perf_metrics
+                )
+
+                record.status = "failed"
+                record.progress = 1.0
+                record.image_results_json = json.dumps(clean_numpy_types(image_results))
+                record.aggregate_results_json = json.dumps(clean_numpy_types(structural_res["statistics"]))
+                record.health_score = None
+                record.failure_probability = None
+                record.rul_days = None
+                record.risk_category = "Unknown"
+                record.maintenance_priority = "Inspection Required"
+                record.maintenance_action = "Re-inspection Required"
+                record.summary_report = explainability_res["summary_report"]
+                record.pdf_report_path = pdf_path
+                record.performance_metrics_json = json.dumps(clean_numpy_types(perf_metrics))
+                record.model_metadata_json = json.dumps(clean_numpy_types(model_metadata))
+
+                db.commit()
+                logger.info(f"Campaign #{inspection_id} finalized as INSPECTION_FAILED.")
+                return
+
+            # State 3 (PARTIAL_ANALYSIS) or State 4 (FULL_ANALYSIS)
+            # Run pipeline only on accepted images
+            target_results = valid_imgs
+
+            # 4. Merge duplicate overlapping defects across accepted images
+            logger.info("De-duplicating overlapping defect detections on accepted images...")
+            merger = OpenCVDuplicateMerger()
+            unique_defects = merger.merge_duplicates(target_results)
             record.progress = 0.75
             db.commit()
             
             # 5. Execute Structural Analysis Engine
             logger.info("Mapping defects to structural elements and generating aggregates...")
             structural_engine = StructuralEngine()
-            structural_res = structural_engine.analyze(image_results, unique_defects)
+            structural_res = structural_engine.analyze(target_results, unique_defects)
             record.progress = 0.82
             db.commit()
             
-            # 6. Execute Prediction AI Engine (Baseline ML models with visual penalty overlays)
+            # Step 5: Immediately before SHI calculation log stage variables
+            stats = structural_res["statistics"]
+            logger.info(f"=== PRE-SHI ENGINE AUDIT LOG ===")
+            logger.info(f"  largest_crack_width: {stats.get('largest_crack_width')}")
+            logger.info(f"  critical_count: {stats.get('critical_defect_count')}")
+            logger.info(f"  maximum_severity: {stats.get('maximum_severity')}")
+            logger.info(f"  mapped_defects count: {len(structural_res.get('defects', []))}")
+
+            # Step 7 Integrity Assertions
+            raw_defects_count = sum(len(img.get("features", {}).get("defects", [])) for img in target_results)
+            if raw_defects_count > 0 and len(unique_defects) == 0:
+                from backend.ml.computer_vision.base import BrokenDefectPropagationError
+                raise BrokenDefectPropagationError(
+                    f"BrokenDefectPropagationError: Accepted images contain {raw_defects_count} defects, "
+                    f"but DuplicateMerger returned unique_defects = []."
+                )
+            if len(unique_defects) > 0 and len(structural_res.get("defects", [])) == 0:
+                from backend.ml.computer_vision.base import BrokenDefectPropagationError
+                raise BrokenDefectPropagationError(
+                    f"BrokenDefectPropagationError: unique_defects contains {len(unique_defects)} defects, "
+                    f"but StructuralEngine returned mapped_defects = []."
+                )
+
+            # 6. Execute Prediction AI Engine
             logger.info("Running machine learning prediction models...")
             prediction_engine = PredictionEngine(self.baseline_pipeline)
             health_predictions = prediction_engine.predict(structural_res["statistics"])
             
-            # Package ML prediction outputs directly inside the statistics packet to maintain data consistency
+            # 6b. Build Inspection Evidence Graph & Provenance Lineage
+            evidence_graph = InspectionEvidenceGraph()
+            evidence_graph.build(
+                accepted_images=target_results,
+                visible_components=structural_res["statistics"].get("visible_components_inventory", []),
+                verified_defects=structural_res["defects"],
+                measurements={
+                    "largest_crack_width": structural_res["statistics"].get("largest_crack_width", 0.0),
+                    "largest_crack_length": structural_res["statistics"].get("largest_crack_length", 0.0),
+                    "rust_coverage_percent": structural_res["statistics"].get("rust_coverage_percent", 0.0),
+                    "corrosion_coverage_percent": structural_res["statistics"].get("corrosion_coverage_percent", 0.0)
+                },
+                health_predictions=health_predictions,
+                coverage_score=structural_res["statistics"].get("coverage_score", 1.0),
+                uninspected_components=structural_res["statistics"].get("uninspected_components", []),
+                rejected_images=rejected_imgs
+            )
+
+            from backend.ml.computer_vision.base import CampaignStatisticsMismatchError
             stats = structural_res["statistics"]
+            stats["defects"] = structural_res.get("defects", [])
+
+            # Temporary assertion guard: VerifiedDefects > 0 => campaign_stats["defects"] > 0
+            verified_defects_count = len(structural_res.get("defects", []))
+            if verified_defects_count > 0 and len(stats.get("defects", [])) == 0:
+                raise CampaignStatisticsMismatchError(
+                    f"CampaignStatisticsMismatchError: VerifiedDefects count ({verified_defects_count}) > 0 "
+                    f"but campaign_stats['defects'] is empty ({len(stats.get('defects', []))})."
+                )
+
+            stats["engineering_confidence"] = evidence_graph.engineering_confidence
+            stats["inspection_limitations"] = evidence_graph.inspection_limitations
             stats["prediction_confidence"] = health_predictions["prediction_confidence"]
             stats["health_baseline_score"] = health_predictions["health_baseline_score"]
             stats["baseline_features"] = health_predictions["baseline_features"]
             stats["point_deductions"] = health_predictions["point_deductions"]
             stats["penalties"] = health_predictions["penalties"]
+            stats["evidence_graph"] = evidence_graph.to_dict()
+            stats["provenance"] = evidence_graph.provenance
             
             record.progress = 0.88
             db.commit()
@@ -163,41 +355,18 @@ class CampaignInspectionPipeline:
             logger.info("Generating SHAP feature contributions and natural language reports...")
             explainability_engine = ExplainabilityEngine()
             explainability_res = explainability_engine.generate_explanation(health_predictions, structural_res["statistics"])
+            
+            if pipeline_state == "PARTIAL_ANALYSIS":
+                explainability_res["summary_report"] = (
+                    f"Partial Analysis: Only {accepted_count} of {total_imgs} uploaded images passed quality validation. "
+                    f"{rejected_count} images were rejected. "
+                ) + explainability_res.get("summary_report", "")
+
             record.progress = 0.95
             db.commit()
             
             # 9. Execute Report Engine
             logger.info("Generating ReportLab PDF report and dashboard JSON packets...")
-            report_engine = ReportEngine()
-            
-            # Create execution performance metrics
-            duration = time.time() - start_time
-            valid_imgs = [r for r in image_results if r.get("is_valid", False)]
-            rejected_imgs = [r for r in image_results if not r.get("is_valid", False)]
-            
-            avg_quality = 0.0
-            if valid_imgs:
-                avg_quality = float(np.mean([r.get("metrics", {}).get("blur_score", 100) for r in valid_imgs]))
-            # Cap/normalize quality value to percentage
-            avg_quality_pct = min(100.0, round(avg_quality / 5.0, 1)) if avg_quality > 0 else 0.0
-            
-            perf_metrics = {
-                "total_processing_time_sec": round(duration, 2),
-                "images_per_second": round(total_imgs / duration, 2) if duration > 0 else 0.0,
-                "accepted_images": len(valid_imgs),
-                "rejected_images": len(rejected_imgs),
-                "avg_image_quality": avg_quality_pct,
-                "device": "CPU", # default fallback
-                "memory_usage_mb": 142.5 # dummy process load
-            }
-            
-            model_metadata = {
-                "model_name": "YOLOv11-BridgeDefects / SAM2",
-                "version": "2026.07.18",
-                "device": "CPU",
-                "threshold": detector.confidence_threshold
-            }
-            
             pdf_path = report_engine.generate_pdf_report(
                 inspection_id=inspection_id,
                 health_predictions=health_predictions,

@@ -136,16 +136,24 @@ async def vision_predict(
         
         # Save inspection predictions to DB
         pred = results["predictions"]
+        def safe_float(val):
+            if val is None or val == "N/A":
+                return None
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return None
+
         record = PredictionRecord(
             input_data=json.dumps(results["ml_input"]),
-            health_score=pred["health_score_raw"],
-            failure_probability=pred["failure_probability_raw"],
-            rul_days=pred["rul_days"],
-            risk_category=pred["risk_category"],
-            maintenance_priority=pred["maintenance_priority"],
-            maintenance_recommendation=pred["maintenance_recommendation"],
-            prediction_confidence=pred["prediction_confidence"],
-            model_version=pred["model_version"],
+            health_score=safe_float(pred.get("health_score_raw", pred.get("health_score"))),
+            failure_probability=safe_float(pred.get("failure_probability_raw", pred.get("failure_probability"))),
+            rul_days=safe_float(pred.get("rul_days")),
+            risk_category=str(pred.get("risk_category", "Unknown")),
+            maintenance_priority=str(pred.get("maintenance_priority", "Medium")),
+            maintenance_recommendation=str(pred.get("maintenance_recommendation", "")),
+            prediction_confidence=safe_float(pred.get("prediction_confidence")) or 0.0,
+            model_version=str(pred.get("model_version", pred.get("ml_version", "v1.0.0"))),
             analysis_type="single_image",
             status="completed",
         )
@@ -309,9 +317,11 @@ async def generate_report(image_id: str, prediction_id: int, db: Session = Depen
         tilt = inputs.get("Tilt_deg", 0.0)
         anomaly_score = inputs.get("Anomaly_Detection_Score", 0.0)
         
+        crack_str = f"{crack_len:.2f} mm" if crack_len > 0.0 else "N/A"
+        
         defect_data = [
             [Paragraph("<b>Defect Description</b>", bold_body), Paragraph("<b>Estimated Value</b>", bold_body)],
-            [Paragraph("Estimated Crack Length", body_style), Paragraph(f"{crack_len:.2f} mm", body_style)],
+            [Paragraph("Estimated Crack Length", body_style), Paragraph(crack_str, body_style)],
             [Paragraph("Corrosion Area percentage", body_style), Paragraph(f"{corr_lvl:.2f} %", body_style)],
             [Paragraph("Total Damage Area percentage", body_style), Paragraph(f"{defect_score:.2f} %", body_style)],
             [Paragraph("Approximate Bridge Tilt", body_style), Paragraph(f"{tilt:.2f}°", body_style)],
@@ -359,8 +369,11 @@ async def generate_report(image_id: str, prediction_id: int, db: Session = Depen
     if not pdf_path.exists():
         raise HTTPException(status_code=500, detail="Generated PDF file not found")
         
+    now_str = datetime.now().strftime("%Y-%m-%d_%H-%M")
+    download_filename = f"BridgeGuardian_Report_{now_str}.pdf"
+
     return FileResponse(
         str(pdf_path),
         media_type="application/pdf",
-        filename=pdf_filename
+        filename=download_filename
     )

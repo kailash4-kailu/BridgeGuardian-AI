@@ -57,7 +57,9 @@ class OpenCVDuplicateMerger(BaseDuplicateMerger):
                 inst2 = all_instances[j]
                 det2 = inst2["defect"]
 
-                if det1["type"] != det2["type"]:
+                type1 = det1.get("type", det1.get("label"))
+                type2 = det2.get("type", det2.get("label"))
+                if type1 != type2:
                     continue
 
                 bx2, by2, bw2, bh2 = det2["bbox"]
@@ -91,20 +93,31 @@ class OpenCVDuplicateMerger(BaseDuplicateMerger):
                     visited.add(j)
 
             representative = max(group, key=lambda x: x["defect"]["confidence"])["defect"]
-            severities = [x["defect"]["severity"] for x in group]
+            severities = [x["defect"].get("severity", "Moderate") for x in group]
             severity_priority = {"Critical": 4, "Severe": 3, "Moderate": 2, "Minor": 1}
             final_severity = max(severities, key=lambda s: severity_priority.get(s, 0))
 
             unique_defects.append({
                 "defect_id": defect_id,
-                "type": representative["type"],
+                "type": representative.get("type", representative.get("label", "Crack")),
                 "severity": final_severity,
                 "confidence": float(np.mean([x["defect"]["confidence"] for x in group])),
                 "bbox": representative["bbox"],
-                "measurements": representative["measurements"],
+                "measurements": representative.get("measurements", {}),
                 "images": [x["img_name"] for x in group],
                 "occurrences": len(group)
             })
+
+        import logging
+        logger = logging.getLogger("bridgeguardian.cv.duplicate_merger")
+        logger.info(f"DuplicateMerger: Input Defects ({len(all_instances)}) -> Merged Defects ({len(unique_defects)})")
+
+        if len(all_instances) > 0 and len(unique_defects) == 0:
+            from backend.ml.computer_vision.base import BrokenDefectPropagationError
+            raise BrokenDefectPropagationError(
+                f"BrokenDefectPropagationError: DuplicateMerger received {len(all_instances)} input defects "
+                f"but returned 0 merged unique defects."
+            )
 
         return unique_defects
 

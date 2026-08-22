@@ -83,8 +83,8 @@ class RULEstimator:
         else:
             # Empirical degradation rate scaled by structural health loss
             daily_rate = max(0.0005, (1.0 - shi_current) * 0.005)
-            method = "degradation_model"
-            confidence = "high"
+            method = "default_rate"
+            confidence = "low"
 
         # Calculate RUL days based on headroom and degradation rate
         rul_days = headroom / daily_rate if daily_rate > 0 else 0.0

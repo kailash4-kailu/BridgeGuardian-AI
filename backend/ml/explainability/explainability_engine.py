@@ -56,23 +56,45 @@ class ExplainabilityEngine:
             ml_contributions.append("No structural visual defects detected. Bridge remains at baseline sensor health.")
 
         # 3. Assemble Natural Language AI Report
-        damage_desc = "minor visual degradation"
-        if critical_count >= 3 or risk_category == "Critical":
-            damage_desc = "critical structural failure risks"
-        elif critical_count >= 1 or risk_category == "Poor":
-            damage_desc = "severe visual and structural deterioration"
-        elif risk_category == "Fair":
-            damage_desc = "moderate structural wear"
-            
-        lines = [
-            f"Drone inspection campaign complete. Bridge exhibits {damage_desc}.",
-            f"Overall health score is evaluated at {health_score}/100, placing the structure in the '{risk_category}' category.",
-            f"The Vision AI Engine identified {critical_count} critical or severe defects.",
-            f"The worst localized damage occurs on the '{most_damaged}' component.",
-            f"Significant crack measurements show a maximum width of {largest_width} mm and maximum length of {largest_len} mm." if largest_width > 0 else "No significant crack defects detected.",
-            f"Steel corrosion and rust coverage are measured at {total_corrosion}% of the visible structural area." if total_corrosion > 0 else "No active corrosion detected on visible steel surfaces.",
-            f"Immediate maintenance is recommended to prevent structural failure." if risk_category in ("Critical", "Poor") else "Routine monitoring and scheduled maintenance are recommended."
-        ]
+        coverage_pct = int(round(aggregate_stats.get("coverage_score", 1.0) * 100, 0))
+
+        if critical_count == 0 and largest_width == 0.0 and total_corrosion == 0.0:
+            if coverage_pct >= 90:
+                lines = [
+                    "Drone inspection campaign complete.",
+                    f"No visible structural deterioration was identified across {coverage_pct}% of the observed bridge structure.",
+                    f"Overall health score is evaluated at {health_score}/100, placing the structure in the '{risk_category}' category.",
+                    "All observed structural components demonstrate verified healthy condition.",
+                    "Routine monitoring and scheduled inspection are recommended."
+                ]
+            else:
+                lines = [
+                    "Drone inspection campaign complete.",
+                    "No visible deterioration was identified within the inspected regions.",
+                    f"Approximately {coverage_pct}% of the bridge structure was observed.",
+                    "The remaining structural regions were not fully assessed.",
+                    "Therefore this inspection cannot certify the entire bridge as defect-free.",
+                    f"Structural health score for inspected regions is evaluated at {health_score}/100 with status '{risk_category}'.",
+                    "Follow-up inspection is recommended for unassessed structural components."
+                ]
+        else:
+            damage_desc = "minor visual degradation within analyzed regions"
+            if critical_count >= 3 or risk_category == "Critical":
+                damage_desc = "critical structural failure risks within analyzed regions"
+            elif critical_count >= 1 or risk_category == "Poor":
+                damage_desc = "severe visual and structural deterioration within analyzed regions"
+            elif risk_category == "Fair":
+                damage_desc = "moderate structural wear within analyzed regions"
+                
+            lines = [
+                f"Drone inspection campaign complete. Inspected regions ({coverage_pct}% coverage) exhibit {damage_desc}.",
+                f"Overall health score is evaluated at {health_score}/100, placing analyzed regions in the '{risk_category}' category.",
+                f"The Vision AI Engine identified {critical_count} critical or severe defects.",
+                f"The worst localized damage occurs on the '{most_damaged}' component.",
+                f"Significant crack measurements show a maximum width of {largest_width} mm and maximum length of {largest_len} mm." if largest_width > 0 else "No significant crack defects detected in analyzed regions.",
+                f"Steel corrosion and rust coverage are measured at {total_corrosion}% of the visible structural area." if total_corrosion > 0 else "No active corrosion detected on visible steel surfaces.",
+                f"Immediate maintenance is recommended to prevent structural failure." if risk_category in ("Critical", "Poor") else "Routine monitoring and targeted inspection are recommended."
+            ]
         summary_report = " ".join(lines)
 
         return {
