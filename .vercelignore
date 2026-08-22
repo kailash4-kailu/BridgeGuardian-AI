@@ -4,8 +4,7 @@
 .codex
 .pytest_cache
 .venv
-temp_env_312
-frontend
+frontend/node_modules
 node_modules
 dataset
 bridgeguardian.db
